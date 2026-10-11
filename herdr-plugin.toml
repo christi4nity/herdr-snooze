@@ -1,6 +1,6 @@
 id = "herdr-snooze"
 name = "Snooze"
-version = "0.2.4"
+version = "0.2.5"
 min_herdr_version = "0.9.0"
 description = "Hide an agent (or every agent in a space) from the Agents panel for 15 minutes, an hour, a day, a week… It comes back by itself."
 platforms = ["linux", "macos"]
@@ -38,14 +38,15 @@ command = ["/bin/sh", "run.sh", "action", "wake"]
 # bind it, or pick it from the palette / right-click menu.
 [[actions]]
 id = "toggle"
-title = "Agents panel: snoozed <-> active"
-description = "Flip the Agents panel to list only what is snoozed, and back. The label shows which side you are on."
+title = "Agents panel: priority -> grouped -> snoozed"
+description = "Step the Agents panel through priority order, grouped order and the list of only what is snoozed, round again. The label shows where you are."
 contexts = ["global"]
 command = ["/bin/sh", "run.sh", "toggle"]
 
 # herdr won't let its own "priority"/"grouped" label be clicked while snooze
-# holds the panel, so this switches the order in its place. The switch lasts
-# until the last snooze ends; then herdr's own setting is back.
+# holds the panel, so this switches the order in its place, without the stop at
+# the snoozed list that the toggle makes. The switch lasts until the last
+# snooze ends; then herdr's own setting is back.
 [[actions]]
 id = "order"
 title = "Agents panel: priority <-> grouped"

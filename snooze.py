@@ -1730,7 +1730,7 @@ USAGE = """usage: snooze.py <command>
   action wake                     wake the focused pane's agent, no popup
   picker                          the popup itself
   tick [--force|--detected|--timer]  reconcile tokens and the agent view
-  toggle                          Agents panel: only snoozed <-> active
+  toggle                          Agents panel: priority -> grouped -> only snoozed, round again
   order                           Agents panel: priority <-> grouped, while anything is snoozed
   snooze <pane_id|workspace:ID> <duration>
   wake --all | <pane_id|workspace:ID>...
@@ -1859,24 +1859,37 @@ def main(argv):
     if command == "toggle":
         config = load_config()
         with locked_state() as state:
-            entering = state["view"].get("showing") != "snoozed"
-            if entering and state["panes"]:
-                state["view"]["showing"] = "snoozed"
-                state["view"]["from_pane"] = invocation_context().get("focused_pane_id") or focused_pane(
+            view = state["view"]
+            # One key walks the whole panel: herdr's two orders, then the
+            # snoozed list. The orders are only ours to step through while
+            # nobody else orders the panel (see `order`); otherwise it is
+            # plain active <-> snoozed.
+            own_order = not view.get("inherited") and not config["sort"]
+            ring = (["priority", "spaces"] if own_order else ["active"]) + ["snoozed"]
+            if view.get("showing") == "snoozed":
+                here = "snoozed"
+            else:
+                here = (_mode_name(view.get("order")) or panel_mode()) if own_order else "active"
+            there = ring[(ring.index(here) + 1) % len(ring)]
+            if there == "snoozed" and state["panes"]:
+                view["showing"] = "snoozed"
+                view["from_pane"] = invocation_context().get("focused_pane_id") or focused_pane(
                     call("pane.list").get("panes", [])
                 )
             else:
-                state["view"].pop("showing", None)
-                state["view"].pop("from_pane", None)
+                view.pop("showing", None)
+                view.pop("from_pane", None)
+                if there in PANEL_MODES:
+                    view["order"] = there
             if state["panes"]:
                 sync(state, config)
-            showing = state["view"].get("showing") == "snoozed"
-            if entering and not showing:
-                # Asked for the snoozed list and didn't get it: nothing was
-                # snoozed, or the last deadline had passed and this very sync
-                # cleared it. A key press that does nothing needs a reason.
+            view = state["view"]
+            if not view.get("applied"):
+                # Nothing was snoozed, or the last deadline had passed and
+                # this very sync cleared it. A key press that does nothing
+                # needs a reason.
                 notify("Snooze", "Nothing is snoozed.")
-            log("toggle: showing", "snoozed" if showing else "active")
+            log("toggle: showing", "snoozed" if view.get("showing") == "snoozed" else there)
         return 0
 
     if command == "order":

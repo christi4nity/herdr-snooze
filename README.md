@@ -80,8 +80,8 @@ herdr plugin link ./herdr-snooze
 | --- | --- |
 | `herdr-snooze.agent` | One key, both ways: on an active agent it asks how long and hides it; on a snoozed agent it wakes it, no popup. |
 | `herdr-snooze.workspace` | Same, for every agent in the current space — including agents that start there later. |
-| `herdr-snooze.toggle` | Flip the Agents panel to list only what is snoozed, and back. |
-| `herdr-snooze.order` | Switch the Agents panel between `priority` and `grouped` order while anything is snoozed, when herdr's own switch is locked. |
+| `herdr-snooze.toggle` | Step the Agents panel through `priority` order, `grouped` order and the list of only what is snoozed, round again. |
+| `herdr-snooze.order` | Switch the Agents panel between `priority` and `grouped` order only, skipping the snoozed list. |
 | `herdr-snooze.wake` | Wake the focused pane's agent; never snoozes. For scripts, or a key that should only ever wake. |
 | `herdr-snooze.wake-all` | Wake everything. |
 
@@ -115,14 +115,18 @@ the panel keeps that order. When another plugin labels the panel, its label
 takes that place instead, such as `active 💤 2`.
 
 herdr doesn't let its label be clicked to switch order while anything is
-snoozed, so `herdr-snooze.order` switches it in its place (bind it to a key like
-the toggle). The switch lasts only until the last snooze ends: herdr keeps its
+snoozed, so `herdr-snooze.toggle` steps through both orders on its way round
+to the snoozed list: `priority`, `grouped`, snoozed only, and `priority` again.
+`herdr-snooze.order` switches between the two orders alone, if you want that on
+a key of its own. The switch lasts only until the last snooze ends: herdr keeps its
 own setting, and a plugin can't change it. While it's switched away from
-herdr's own, the label shows a `*`, such as `grouped* 💤 2`. It does nothing
-while another plugin orders the panel.
+herdr's own, the label shows a `*`, such as `grouped* 💤 2`. While another
+plugin orders the panel, or `"sort"` is set in `config.json`, the order is not
+ours to switch: `order` does nothing, and the toggle goes straight between
+that panel and the snoozed list.
 
 The sidebar is the only list there is: it shows either your active agents or
-your snoozed ones, and `herdr-snooze.toggle` picks which. On the snoozed
+your snoozed ones, and `herdr-snooze.toggle` gets you to either. On the snoozed
 side the label reads `💤 snoozed only · 2`, so the two cannot be confused.
 
 To wake one, click it there to focus it and press the snooze key again. To give

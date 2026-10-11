@@ -1160,6 +1160,28 @@ class Commands(unittest.TestCase):
         self.assertEqual(self.herdr.view_params["filter"], snooze.VIEW_FILTER)
         self.notify.assert_not_called()
 
+    def test_toggle_walks_both_orders_and_the_snoozed_list(self):
+        self.herdr.view = {"active": False}
+        self.snoozed(snooze.now_ms() + HOUR)
+        snooze.main(["tick"])  # herdr's own here is spaces (an empty home)
+        self.assertEqual(self.herdr.view_params["label"], "grouped z 1")
+        seen = []
+        for _ in range(6):
+            self.assertEqual(snooze.main(["toggle"]), 0)
+            seen.append((self.herdr.view_params["label"], self.herdr.view_params["filter"] == snooze.SNOOZED_LIST_FILTER))
+        lap = [("snoozed only · 1", True), ("priority* z 1", False), ("grouped z 1", False)]
+        self.assertEqual([(label.split(" ", 1)[1] if snoozed else label, snoozed) for label, snoozed in seen], lap * 2)
+        self.assertEqual(self.herdr.view_params["sort"], snooze.PANEL_MODES["spaces"][1])
+        self.notify.assert_not_called()
+
+    def test_toggle_skips_the_orders_when_they_are_not_ours(self):
+        self.snoozed(snooze.now_ms() + HOUR)
+        snooze.main(["tick"])  # borrows the radar's view
+        for snoozed in (True, False, True, False):
+            self.assertEqual(snooze.main(["toggle"]), 0)
+            self.assertEqual(self.herdr.view_params["filter"] == snooze.SNOOZED_LIST_FILTER, snoozed)
+            self.assertEqual(self.herdr.view_params["sort"], snooze.KNOWN_VIEWS[RADAR]["sorts"]["active"])
+
     def test_order_flips_herdrs_own_order_until_the_last_snooze_ends(self):
         self.herdr.view = {"active": False}
         self.snoozed(snooze.now_ms() + HOUR)

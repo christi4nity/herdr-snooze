@@ -1,0 +1,55 @@
+# Changelog
+
+## 0.3.0 - 2026-10-12
+
+Rewritten in Go, to look and work like the other herdr plugins, and to work
+with them.
+
+- **One list of every agent** (`herdr-snooze.manage`): what's snoozed, each
+  snoozed space with the agents it hides under it, and when each wakes; then
+  every agent that's awake. `s` snoozes one (or a snoozed one for a new
+  time), `w` wakes one, `S` snoozes its whole space, `enter` goes to it, all
+  without leaving the list.
+- **Works with Recap.** Snoozed agents have a tab of their own there.
+  `ctrl+s` opens this popup on the agent you're on; once it's snoozed, or on
+  `esc`, you're back in Recap. `ctrl+w` wakes a snoozed one, no popup. From the list, `r` opens an agent in Recap.
+  Any plugin can open the popup on an agent with `HERDR_SNOOZE_PANE`, and
+  have it come back with `HERDR_POPUP_RETURN`.
+- **Follows herdr's theme**, drawn as the other plugins draw: an agent's
+  state as the sidebar marks it, the keys as pills along the bottom. Works
+  with the mouse.
+- **A snoozed agent's own popup can wake it** (`w`) or give it another time,
+  instead of waking it first and snoozing it again.
+- **A time you type is read as you type it**: *tomorrow 2pm* says *until Wed
+  14:00 · 23h 55m* before you press enter.
+- **A demo** (`Snooze: demo (fictional agents)`), safe to try and to
+  screenshot.
+- **No Python needed.** The build step compiles it with Go, or downloads the
+  release binary for your platform and checks its SHA-256. With nothing
+  snoozed, a hook is one short process.
+
+What's snoozed stays snoozed across the upgrade: the state file and the
+session keys are the same. The popup's environment variables are now
+`HERDR_SNOOZE_*`. After upgrading a linked checkout, run `herdr plugin link`
+again so herdr reads the new manifest.
+
+## 0.2.5
+
+- The toggle steps through priority, grouped and the snoozed list.
+
+## 0.2.4
+
+- herdr's priority/grouped label and order are kept while anything is
+  snoozed.
+
+## 0.2.3
+
+- A picker left open on another client is replaced instead of failing with
+  `ui_busy`.
+
+## 0.2.0 – 0.2.2
+
+- Durations are elapsed time; snooze keeps a marker token of its own; a
+  snooze belongs to the agent it was for; moved panes keep their snooze;
+  bursts of hooks coalesce; a sleeper ticks at the next deadline and at
+  least every five minutes; config.json is validated.

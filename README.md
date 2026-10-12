@@ -1,50 +1,114 @@
 # herdr-snooze
 
-Snooze an agent in [herdr](https://herdr.dev): hide it from the Agents panel for
-15 minutes, an hour, a day, a week — and have it come back by itself when the
+**Keep a long list of agents down to the ones you're working with.**
+
+Agents wait a lot: on CI, on a review, on a teammate, on tomorrow morning.
+Every one of them stays in herdr's Agents panel the whole time, between you
+and the agents that need you now. herdr-snooze is a
+[herdr](https://herdr.dev) plugin that hides an agent, or a whole space, from
+the Agents panel until a time you pick, and brings it back by itself when the
 time is up.
 
-For the agent that is waiting on a deploy, a review, or tomorrow morning, and
-that you would rather not keep looking at until then.
+![The list on the demo's agents: a snoozed space with its two agents under it, two agents snoozed on their own with when each wakes, then the four that are awake](docs/images/list.png)
 
-```
-  Fix the login bug
-  claude · web-app
+- **One key, both ways.** On an agent that's in the way, it asks how long
+  and hides it; on a snoozed one, it wakes it.
+- **For as long as you like.** 15 minutes, an hour, *tomorrow 9am*, a week,
+  or anything you type, read as you type it.
+- **A whole space at once**, including agents that start there later.
+- **It comes back on time**, with nothing of the plugin running: herdr
+  itself drops what hides it at the deadline.
+- **One list of everything.** What's snoozed and until when, and every agent
+  that isn't: wake one, change when it wakes, or snooze another from the
+  same popup.
+- **Or look in the panel.** One key flips the Agents panel to only what's
+  snoozed, and back.
+- **Nothing blocked stays hidden.** A snoozed agent that needs you still
+  shows in the snoozed list.
+- **Works with Recap.** Snoozed agents have a tab of their own there;
+  `ctrl+s` snoozes the agent you're on, and `ctrl+w` wakes it.
+- **It fits in.** Follows herdr's theme, works with the mouse, and gets
+  along with plugins that sort the Agents panel. Linux and macOS.
 
-  1  15 minutes           17:26
-  2  1 hour               18:11
-  3  3 hours              20:11
-  4  6 hours              23:11
-  5  1 day                Mon 17:11
-  6  3 days               Wed 17:11
-  7  1 week               27 Sep 17:11
-  c  Custom…
+## Works with the other herdr plugins
 
-  ↑↓ move · enter select · esc cancel
-```
+This is one of four plugins that are useful alone and better together.
+Install [herdr-recap](https://github.com/mrolafsson/herdr-recap), [herdr-github](https://github.com/mrolafsson/herdr-github) or [herdr-linear](https://github.com/mrolafsson/herdr-linear) alongside it and they find each other:
+there is nothing to configure.
 
-- Snooze one agent, or every agent in a space.
-- Flip the Agents panel to show only what is snoozed, and back.
-- Wake anything early, in one key.
-- No daemon. Works alongside panel-sorting plugins such as
-  [herdr-radar](https://github.com/hhdebb/herdr-radar).
+| Plugin | What it adds to the others |
+| --- | --- |
+| [herdr-recap](https://github.com/mrolafsson/herdr-recap) | Every agent in one list. An agent's pull request and its Linear issue are links there: a click, or `ctrl+g` / `ctrl+l`, opens it in the plugin it belongs to. Snoozed agents have a tab of their own: `ctrl+s` snoozes an agent, in Snooze's popup, and `ctrl+w` wakes one. |
+| [herdr-github](https://github.com/mrolafsson/herdr-github) | Tags every space and agent with its branch's pull request (`#482 ✓ approved`), which Recap shows and groups its agents by. Opens straight on an agent's PR when Recap asks. |
+| [herdr-linear](https://github.com/mrolafsson/herdr-linear) | Tags every space and agent with the Linear issue its branch is named for (`ENG-142 In Progress`), which Recap shows. Opens straight on that issue when Recap asks. |
+| **[herdr-snooze](https://github.com/mrolafsson/herdr-snooze)** (this one) | Hides an agent, or a whole space, from herdr's Agents panel until a time you pick. Tags each snoozed agent with when it wakes (`💤 17:30`), which Recap shows. Opens straight on an agent when Recap asks, and opens Recap on one with `r`. |
+
+- **Auto-discovery.** Each plugin asks herdr which others are installed and
+  enabled. A link only appears when the plugin behind it is there; without
+  it the same text is shown, as text, and its key is left out.
+- **Clickable, and there and back.** herdr shows one popup at a time, so
+  following a link turns the open popup into the other plugin's, in place and
+  without a flicker, and `esc` there brings you back to where you were.
+- **Shared look.** A title, a branch, a pull request and a key are
+  drawn the same in all four, in herdr's theme colours.
+
+See [With Recap](#with-recap) for the keys and the convention behind it.
+
+**Contents:** [Works with the other plugins](#works-with-the-other-herdr-plugins) ·
+[A long list, under control](#a-long-list-under-control) · [Requirements](#requirements) ·
+[Install](#install) · [Use](#use) · [With Recap](#with-recap) ·
+[How it behaves](#how-it-behaves) · [Configuration](#configuration) ·
+[Uninstall](#uninstall) · [Troubleshooting](#troubleshooting) ·
+[How it works](#how-it-works) · [Development](#development)
+
+## A long list, under control
+
+Ten agents is a normal afternoon. Two need you, three are working, and the
+other five are waiting on something that isn't you: a CI run, a review, the
+API team, the morning. Those five sit in the Agents panel all the same,
+between you and the two that need you, and every time you look you read past
+them again.
+
+This is how they stay out of the way:
+
+- **Snooze what's waiting, for as long as it waits.** The agent that opened a
+  pull request: until the review's likely back, *3 hours*. The one waiting on
+  the API team: *tomorrow 9am*. It's gone from the panel, and when the time is
+  up it's back, without you having to remember it.
+- **Snooze a space you're not on today.** The docs space can sit for three
+  days. Its agents go with it, and so does any agent started there meanwhile.
+- **Keep the panel for what needs you.** What's left is what you're working
+  with: the agents that are working, and the ones that need you, first.
+- **Look at what's snoozed when you choose to.** The list shows everything
+  that's snoozed and when each wakes; a key in the panel flips it to only the
+  snoozed ones. Waking one early, or giving it longer, is one key either way.
+- **Nothing that needs you stays hidden.** herdr still notifies you, and a
+  snoozed agent that's blocked shows in the snoozed list. Snoozing hides; it
+  doesn't pause or mute.
+
+With [Recap](https://github.com/mrolafsson/herdr-recap) installed, snoozed
+agents have a tab of their own there, so coming back to the list starts with
+the ones you didn't put away. `ctrl+s` snoozes the agent you're reading
+about, and on the Snoozed tab `ctrl+w` wakes one.
 
 ## Requirements
 
-- herdr 0.9.0 or newer
-- Python 3.8+ as `python3` on the `PATH` herdr sees — standard library only,
-  nothing to install or build
-- Linux or macOS
+- **herdr 0.9.0** or later.
+- **Linux** or **macOS**, on arm64 or x86-64.
 
 ## Install
 
-```bash
+```sh
 herdr plugin install mrolafsson/herdr-snooze
 ```
 
-Then bind the keys you want in `~/.config/herdr/config.toml`. Nothing in a herdr
-manifest can add key bindings for you, so **without this step the plugin is
-installed but you have no way to reach it** except the command line.
+The build step compiles it with Go if you have it, or downloads the release
+binary for your platform and checks its SHA-256.
+
+Then bind the keys you want in `~/.config/herdr/config.toml`. Nothing in a
+herdr manifest can add key bindings for you, so **without this step the
+plugin is installed but you have no way to reach it** except the command
+palette and the command line.
 
 ```toml
 [[keys.command]]
@@ -56,46 +120,67 @@ description = "snooze or wake agent"
 [[keys.command]]
 key = "prefix+alt+z"
 type = "plugin_action"
+command = "herdr-snooze.manage"
+description = "snooze: every agent"
+
+[[keys.command]]
+key = "prefix+ctrl+z"
+type = "plugin_action"
 command = "herdr-snooze.toggle"
-description = "agents panel: snoozed <-> active"
+description = "agents panel: priority -> grouped -> snoozed"
 ```
 
-```bash
-herdr server reload-config
-```
+On macOS, `alt` needs Option to send Alt in your terminal (Ghostty:
+`macos-option-as-alt = true`).
 
-Pick any keys you like; both are free in herdr's default bindings. If you
-use a command palette plugin, every action below shows up there too.
+Then `herdr server reload-config`, and **start a new herdr client** (detach
+and run `herdr` again): a client that was already open keeps the key
+bindings it started with. Pick any keys you like; these are free in herdr's
+default bindings.
 
-### Install from a local checkout
+`Snooze: demo (fictional agents)` in the command palette shows the list on
+made-up agents: safe to try, safe to screenshot.
 
-```bash
+### From a local checkout
+
+```sh
 git clone https://github.com/mrolafsson/herdr-snooze
 herdr plugin link ./herdr-snooze
 ```
+
+`herdr plugin link` runs the build step (`scripts/build.sh`) the first time;
+after editing the code, `go build -o bin/herdr-snooze .`.
 
 ## Use
 
 | Action | Does |
 | --- | --- |
-| `herdr-snooze.agent` | One key, both ways: on an active agent it asks how long and hides it; on a snoozed agent it wakes it, no popup. |
-| `herdr-snooze.workspace` | Same, for every agent in the current space — including agents that start there later. |
+| `herdr-snooze.agent` | One key, both ways: on an awake agent it asks how long and hides it; on a snoozed agent it wakes it, no popup. |
+| `herdr-snooze.workspace` | Same, for every agent in the current space, including agents that start there later. |
+| `herdr-snooze.manage` | The list of every agent: what's snoozed and until when, then everything awake. |
 | `herdr-snooze.toggle` | Step the Agents panel through `priority` order, `grouped` order and the list of only what is snoozed, round again. |
 | `herdr-snooze.order` | Switch the Agents panel between `priority` and `grouped` order only, skipping the snoozed list. |
 | `herdr-snooze.wake` | Wake the focused pane's agent; never snoozes. For scripts, or a key that should only ever wake. |
 | `herdr-snooze.wake-all` | Wake everything. |
+| `herdr-snooze.demo` | The list on fictional agents. |
 
-Run any of them from a key binding, a command palette, or the command line:
+Run any of them from a key binding, the command palette, or the command line:
 
-```bash
+```sh
 herdr plugin action invoke herdr-snooze.agent
 ```
 
 ### Choosing how long
 
-Press a number, or move with `↑` `↓` / `j` `k` and press `enter`. `esc` cancels.
+<img src="docs/images/picker.png" alt="The durations for an agent, each with the time it would wake" width="440">
 
-`c` takes anything:
+Press a number, or move with `↑` `↓` and press `enter`; a click picks one
+too. Each row says when the agent would wake. `esc` cancels; `tab` goes to
+the list instead.
+
+`c` takes anything, and says when that is as you type:
+
+<img src="docs/images/custom.png" alt="Typing tomorrow 2pm, read as Wednesday at 14:00, 23 hours 55 minutes from now" width="440">
 
 | You type | Means |
 | --- | --- |
@@ -107,9 +192,38 @@ Press a number, or move with `↑` `↓` / `j` `k` and press `enter`. `esc` canc
 
 A preset counts from the moment you pick it, not from when the popup opened.
 
-### Seeing what is snoozed, and waking it
+### The list
 
-While anything is snoozed, the Agents panel label shows the icon and a count
+`herdr-snooze.manage` opens every agent in one list (the picture at the
+top). **Snoozed** comes first: each snoozed space with the agents it hides
+under it, then the agents snoozed on their own, the soonest to wake first,
+each with how long it has left and when it wakes. **Awake** is every other
+agent, in herdr's order, with its state.
+
+| Key | Does |
+| --- | --- |
+| `↑` `↓`, `j` `k` | move |
+| `pgup` / `pgdn`, `home` / `end` | page, first / last |
+| `enter` | go to that agent and close (on a space, its first agent) |
+| `s` | snooze it: an awake agent, for as long as you choose; a snoozed agent or space, for a new time |
+| `w` | wake a snoozed agent or space now |
+| `S` | snooze that agent's whole space |
+| `r` | open that agent in [Recap](#with-recap), when it's installed; `esc` there comes back here |
+| `W` | wake everything |
+| `esc` | close |
+
+Waking and snoozing are separate keys, so neither does the other by
+mistake. Snoozing or waking from the list keeps the list open, so you can go
+down it.
+An agent woken out of a snoozed space stays awake while the space sleeps on.
+
+The keys along the bottom are pills, and buttons: the one under the pointer
+underlines, and a click presses it. Hovering a row selects it, and the wheel
+scrolls.
+
+### In the Agents panel
+
+While anything is snoozed, the Agents panel label shows the badge and a count
 after herdr's own `grouped` or `priority` label, such as `priority 💤 2`, and
 the panel keeps that order. When another plugin labels the panel, its label
 takes that place instead, such as `active 💤 2`.
@@ -118,19 +232,15 @@ herdr doesn't let its label be clicked to switch order while anything is
 snoozed, so `herdr-snooze.toggle` steps through both orders on its way round
 to the snoozed list: `priority`, `grouped`, snoozed only, and `priority` again.
 `herdr-snooze.order` switches between the two orders alone, if you want that on
-a key of its own. The switch lasts only until the last snooze ends: herdr keeps its
-own setting, and a plugin can't change it. While it's switched away from
+a key of its own. The switch lasts only until the last snooze ends: herdr keeps
+its own setting, and a plugin can't change it. While it's switched away from
 herdr's own, the label shows a `*`, such as `grouped* 💤 2`. While another
 plugin orders the panel, or `"sort"` is set in `config.json`, the order is not
 ours to switch: `order` does nothing, and the toggle goes straight between
 that panel and the snoozed list.
 
-The sidebar is the only list there is: it shows either your active agents or
-your snoozed ones, and `herdr-snooze.toggle` gets you to either. On the snoozed
-side the label reads `💤 snoozed only · 2`, so the two cannot be confused.
-
-To wake one, click it there to focus it and press the snooze key again. To give
-it a different deadline, press it twice: wake, then snooze.
+On the snoozed side the label reads `💤 snoozed only · 2`, so the two can't
+be confused. To wake one from there, focus it and press the snooze key again.
 
 To see *when* each one wakes, add `"$snoozed"` to your agent rows. Only snoozed
 agents carry that token, so it appears in the snoozed list and nowhere else:
@@ -145,10 +255,43 @@ rows = [["state_icon", "workspace", "$snoozed"], ["terminal_title_stripped"]]
     Fix the login bug
 ```
 
+## With Recap
+
+Snooze finds [herdr-recap](https://github.com/mrolafsson/herdr-recap) by
+itself when it's installed and enabled: nothing to set up.
+
+![Recap's Snoozed tab on its demo: one agent, snoozed until Tuesday 09:00, with ^w wake and ^s snooze along the bottom](docs/images/recap-snoozed.png)
+
+- **In Recap**, snoozed agents have a tab of their own, *💤 Snoozed*, with
+  when each wakes. `ctrl+s` on any agent opens Snooze's popup on it: the
+  durations for an awake agent; for a snoozed one, the durations to change
+  when it wakes, and `w` to wake it now. Once it's done, or on `esc`, you're
+  back in Recap on the same agent. `ctrl+w` on a snoozed agent wakes it
+  straight away, with no popup: Recap runs `herdr-snooze wake <pane>` from
+  this plugin's folder.
+- **In Snooze's list**, `r` opens the selected agent in Recap, to see where
+  it got to; `esc` there brings the list back on the same agent.
+
+herdr shows one popup at a time, so the popup that's open becomes the other
+plugin's, in place (it keeps the size it was opened with). Without Recap the
+key is left out.
+
+The convention is small, and any plugin can use it. A popup is opened with
+`HERDR_POPUP_RETURN` in its environment: the popup to open again when it's
+closed, as JSON in the shape of herdr's `plugin.pane.open`
+(`{"plugin_id", "entrypoint", "width", "height", "env"}`). Snooze's popup
+(entrypoint `picker`) opens on an agent when `HERDR_SNOOZE_PANE` names its
+pane, and on the list with `HERDR_SNOOZE_SCREEN=list`. Opened that way, it
+goes back once it has snoozed or woken the agent, and on `esc`.
+
+Every plugin can also read what Snooze puts on a snoozed pane: the
+`herdr_snooze` token (only Snooze writes it; its presence means snoozed) and
+the `snoozed` token, the badge and when it wakes (`💤  17:30`).
+
 ## How it behaves
 
 **It hides; it does not pause or mute.** The pane keeps running and the agent
-keeps working. herdr's notifications and the space's status rollup still fire —
+keeps working. herdr's notifications and the space's status rollup still fire:
 the Agents panel is the only thing that changes (sidebar rows, mouse targets,
 `focus_agent` numbering, next/previous agent).
 
@@ -194,7 +337,7 @@ change, while a clock time like `9am` stays 9am.
 starts in the same pane, the new one isn't hidden (in a snoozed space it is:
 the space covers whatever runs in it). The same agent keeps its snooze through
 `/clear`, a resume or a compaction. Moving a pane to another space or tab keeps
-its snooze. If the picker was left open while its pane moved, closed or got a
+its snooze. If the popup was left open while its pane moved, closed or got a
 new agent, it says so instead of snoozing the wrong thing.
 
 A new agent is recognised from what herdr reports: its `pane.agent_detected`
@@ -227,14 +370,15 @@ the panel to snooze within a few minutes; see
 [Alongside plugins that sort the Agents panel](#alongside-plugins-that-sort-the-agents-panel).
 
 **The 💤 is not a button.** herdr offers plugins no hook for clicking the panel
-label, and its right-click menus are built-in only (as of 0.9.1), so everything
-here is reached by key, palette or command line.
+label, and its right-click menus are built-in only (as of 0.9.1), so the panel
+side of this is reached by key, palette or command line; the list is the
+place to click.
 
 ## Configuration
 
 Optional. Create `config.json` in the plugin's config directory:
 
-```bash
+```sh
 herdr plugin config-dir herdr-snooze
 ```
 
@@ -253,6 +397,7 @@ herdr plugin config-dir herdr-snooze
 | `badge` | `"💤"` | Shown in the panel label and in the `$snoozed` token. Any text; `""` for none. |
 | `notify` | `false` | Show a herdr notification when something is snoozed. |
 | `auto_return` | `true` | Leave the snoozed list automatically, as described above. |
+| `theme` | `""` | `"dark"` or `"light"` to say what your terminal is, instead of asking it. See [Colours](#colours). |
 | `views` | — | Teach snooze another plugin's panel order. See below. |
 | `sort` | — | Always use this `agent.view.set` sort while something is snoozed. |
 
@@ -260,6 +405,20 @@ Changes apply to the next action; no reload needed. A value of the wrong type
 falls back to its default, with a note in `herdr plugin log list --plugin
 herdr-snooze`, rather than breaking snooze. See
 [`config.example.json`](config.example.json).
+
+### Colours
+
+Colours come from herdr's theme, drawn as in the other herdr plugins (one
+shared file, `look.go`): the title in the theme's brightest text, where and
+when dim, an agent as herdr's sidebar marks it (`◉` needs you, `◔` working,
+`●` done, `✓` idle), and the keys as pills coloured by what they do: green
+goes somewhere, peach changes something, red wakes everything, grey leaves.
+What's snoozed, and when it wakes, is blue, like the 💤.
+
+A light theme on a dark terminal (or the other way round) would put dark
+text on dark, so then the popup keeps the plugins' own colours. herdr's
+`terminal` theme is spread over your terminal's 16 colours, and a colour you
+set yourself in `[theme.custom]` wins.
 
 ### Alongside plugins that sort the Agents panel
 
@@ -290,7 +449,7 @@ not take effect until the last snooze ends.
 Wake everything first, so the panel is handed back cleanly to whichever plugin
 orders it:
 
-```bash
+```sh
 herdr plugin action invoke herdr-snooze.wake-all
 herdr plugin uninstall herdr-snooze
 ```
@@ -298,12 +457,12 @@ herdr plugin uninstall herdr-snooze
 Then, by hand:
 
 - Remove the `[[keys.command]]` blocks that reference `herdr-snooze.*` from
-  `config.toml`, and `"$snoozed"` from `ui.sidebar.spaces.rows` if you added it,
+  `config.toml`, and `"$snoozed"` from your sidebar rows if you added it,
   then `herdr server reload-config`.
 - herdr leaves the plugin's config and state directories behind, and snooze's
   small session-ID file next to each herdr session's socket:
 
-  ```bash
+  ```sh
   rm -r ~/.config/herdr/plugins/config/herdr-snooze ~/.local/state/herdr/plugins/herdr-snooze
   rm -f ~/.config/herdr/.herdr-snooze-session ~/.config/herdr/sessions/*/.herdr-snooze-session*
   ```
@@ -322,32 +481,35 @@ orders the panel may need its order re-applied (for herdr-radar, run its
 
 Plugin output is captured rather than printed, so this is where errors surface:
 
-```bash
+```sh
 herdr plugin log list --plugin herdr-snooze --limit 10
 ```
 
-**The key does nothing.** Check the binding's `command` is `herdr-snooze.<action>` and
-that you ran `herdr server reload-config`. `herdr plugin action invoke
+**The key does nothing.** Check the binding's `command` is
+`herdr-snooze.<action>`, that you ran `herdr server reload-config`, and that
+the client was started after that. `herdr plugin action invoke
 herdr-snooze.agent` tests the action without the key.
 
 **"This pane has no agent".** Snoozing hides agents; a shell has nothing to hide.
 
-**An agent is hidden and I can't find it.** `herdr-snooze.toggle` flips the
-sidebar to the snoozed agents; `herdr-snooze.wake-all` brings everything back.
+**An agent is hidden and I can't find it.** `herdr-snooze.manage` lists
+everything that's snoozed; `herdr-snooze.wake-all` brings everything back.
 
 **The panel lost its grouping or order.** Another plugin's view was replaced and
-not restored — see *Alongside plugins that sort the Agents panel*. Waking
+not restored: see *Alongside plugins that sort the Agents panel*. Waking
 everything hands the view back.
 
-**`python3` not found.** herdr runs plugins with its own `PATH`, which may not
-include a version manager's shims. Make `python3` resolvable there, or start
-herdr from a shell where it is.
+**The install failed.** Without Go, the build step downloads the release for
+your platform from GitHub; with no network, or a platform other than Linux or
+macOS on arm64 or x86-64, install [Go](https://go.dev/dl) and install again.
 
-To see what snooze has recorded, from a checkout:
+To see what snooze has recorded:
 
-```bash
-python3 snooze.py list
+```sh
+~/.config/herdr/plugins/herdr-snooze/bin/herdr-snooze list
 ```
+
+(or `bin/herdr-snooze list` in a checkout).
 
 ## How it works
 
@@ -359,14 +521,18 @@ anything. The tokens are reported with a TTL, so herdr drops them at the
 deadline.
 
 A small state file, `snoozed.json` in the plugin's state directory, holds the
-real deadlines, and which agent each one is for. `tick` — a startup hook plus
-a few event hooks — reconciles what a TTL alone cannot: herdr caps a token's
+real deadlines, and which agent each one is for. `tick`, a startup hook plus
+a few event hooks, reconciles what a TTL alone cannot: herdr caps a token's
 TTL at 24h, tokens and the view do not survive a server restart, another plugin
 can replace the view, and a pane that moves gets a new ID (it keeps its
 terminal, which is how snooze finds it again). herdr runs hooks concurrently and
 in bursts, so a tick that finds another one running leaves a note and exits, and
 the running one goes again until no note is left. Every tick reads everything
 from herdr, so it doesn't matter which hook's tick does the work.
+
+The state file exists only while something is snoozed, and a hook that finds
+none anywhere returns before doing anything else: with nothing snoozed, each
+event costs one short process.
 
 Between events, one detached `sleep` runs a tick at the next moment something
 needs doing, and at least every five minutes while anything is snoozed. It
@@ -386,34 +552,6 @@ with the file, so a new session with the same name (whose panes herdr numbers
 from `w1:p1` again) never picks up the old one's snoozes. State left by a
 session that no longer exists is removed.
 
-**Upgrading from 0.1.0**, which kept one file for every session: no session
-can know whose records those were, so none adopts them. Instead the first
-session to run 0.1.1 un-hides, in every running herdr session, anything 0.1.0
-may have left hidden there, through each session's own socket. Agents snoozed
-under 0.1.0 therefore come back once on upgrade; snooze them again. The old
-file is removed once every running session has been cleaned up.
-
-If a session can't be reached or refuses, the old file stays and the upgrade
-cleanup is retried later, backing off from 30 seconds up to an hour, so it
-never slows every event down.
-
-What the upgrade can't cover: herdr servers started with their own
-`HERDR_SOCKET_PATH` (herdr's session list doesn't include them), sessions run
-with different `XDG_STATE_HOME` values, and a `badge` changed between 0.1.0
-and 0.1.1 (snooze then can't recognise its old tokens). If agents stay hidden
-after upgrading in one of those setups, run **Wake all snoozed agents** in that
-session: it clears snooze's view and its tokens there.
-
-Token names aren't owned in herdr, so snooze only ever clears a `snoozed` token
-whose value it could have written (it starts with snooze's badge); another
-plugin's token of the same name is left alone. With an empty `badge` in
-config.json there's nothing to tell them apart by.
-
-The state file exists only while something is snoozed, and every command goes
-through `run.sh`, which exits before starting Python when a hook finds no file
-(~8ms per event). It also caches the real interpreter's path, because `python3`
-is often a pyenv/asdf shim that adds ~100ms to every start.
-
 The state file is only removed once herdr has confirmed our view is gone: if
 that last call fails, the file stays and the next event tries again, rather
 than leaving the panel filtered with nothing left to undo it. A state file that
@@ -421,20 +559,47 @@ can't be read (corrupt, or edited by hand) is treated as "don't know", not
 "nothing snoozed": the next event un-hides everything snooze may have hidden
 and then removes the file.
 
+Token names aren't owned in herdr, so snooze only ever clears a `snoozed` token
+whose value it could have written (it starts with snooze's badge); another
+plugin's token of the same name is left alone. With an empty `badge` in
+config.json there's nothing to tell them apart by.
+
+**Upgrading from 0.2**, the Python version: the state file and the session
+keys are the same, so what's snoozed stays snoozed. Upgrading from 0.1.0,
+which kept one file for every session, un-hides once in every running session
+whatever 0.1.0 may have left hidden there; snooze those agents again. If a
+session can't be reached, that's retried later, backing off from 30 seconds
+up to an hour. Servers started with their own `HERDR_SOCKET_PATH` aren't in
+herdr's session list and aren't reached: if agents stay hidden there, run
+**Wake all snoozed agents** in that session.
+
 ## Development
 
-```bash
-python3 -m unittest discover -s tests
-herdr plugin link "$PWD"        # re-run after editing the manifest; read `warnings`
+```sh
+go test -race ./...
+go run . picker --demo       # the popup on fictional agents, in any terminal
+herdr plugin link .          # try it in herdr
+sh scripts/screenshots.sh    # docs/images from the demo (needs freeze)
 
-python3 snooze.py snooze w1:p1 30s      # also: workspace:w1
-python3 snooze.py toggle
-python3 snooze.py wake --all
+go run . snooze w1:p1 30s    # also: workspace:w1
+go run . toggle
+go run . wake --all
+go run . list
 ```
 
 `SNOOZE_STATE_DIR` points the CLI at a scratch state directory, so experiments
-don't touch real snoozes. `herdr plugin link` does not copy files: edits to
-`snooze.py` are live immediately.
+don't touch real snoozes. `docs/images/recap-snoozed.png` is herdr-recap's:
+its `scripts/screenshots.sh` writes it as `docs/images/snoozed.png`, copied
+here. `themes_herdr.go` is generated from herdr's palettes
+by herdr-recap's `scripts/gen-themes.py`, and `look.go` is the file the herdr
+plugins share: change it in all four.
+
+### Releasing
+
+Bump `version` in `herdr-plugin.toml`, then tag it: `git tag v0.3.0 && git
+push --tags`. The release workflow checks the tag matches the manifest, runs
+the tests and publishes the binaries `scripts/build.sh` downloads when Go
+isn't installed.
 
 ## License
 

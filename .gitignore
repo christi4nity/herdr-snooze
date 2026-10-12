@@ -1,3 +1,8 @@
-__pycache__/
 .claude/
 .DS_Store
+# Built by scripts/build.sh (or downloaded from a release).
+/bin/
+# GoReleaser output.
+/dist/
+/vendor/
+/herdr-snooze

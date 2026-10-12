@@ -1,12 +1,14 @@
 id = "herdr-snooze"
 name = "Snooze"
-version = "0.2.5"
+version = "0.3.0"
 min_herdr_version = "0.9.0"
 description = "Hide an agent (or every agent in a space) from the Agents panel for 15 minutes, an hour, a day, a week… It comes back by itself."
 platforms = ["linux", "macos"]
 
-# Python 3.8+, standard library only. Nothing to build. Every command goes through
-# run.sh: it skips Python entirely for idle hooks and bypasses slow python3 shims.
+# Builds ./bin/herdr-snooze from source with Go, or downloads the release
+# binary for this version when Go isn't installed.
+[[build]]
+command = ["sh", "scripts/build.sh"]
 
 # Bind this one to a key (see README):
 #   [[keys.command]]
@@ -18,21 +20,21 @@ id = "agent"
 title = "Snooze or wake agent"
 description = "Pick how long to hide this pane's agent from the Agents panel; if it is already snoozed, wake it."
 contexts = ["pane"]
-command = ["/bin/sh", "run.sh", "action", "agent"]
+command = ["./bin/herdr-snooze", "action", "agent"]
 
 [[actions]]
 id = "workspace"
 title = "Snooze or wake space"
 description = "Pick how long to hide every agent in this space from the Agents panel; if the space is already snoozed, wake it."
 contexts = ["workspace"]
-command = ["/bin/sh", "run.sh", "action", "workspace"]
+command = ["./bin/herdr-snooze", "action", "workspace"]
 
 [[actions]]
 id = "wake"
 title = "Wake agent"
 description = "Un-snooze this pane's agent right away, no popup."
 contexts = ["pane"]
-command = ["/bin/sh", "run.sh", "action", "wake"]
+command = ["./bin/herdr-snooze", "action", "wake"]
 
 # herdr has no hook for clicking the panel's label, so the toggle is an action:
 # bind it, or pick it from the palette / right-click menu.
@@ -41,7 +43,7 @@ id = "toggle"
 title = "Agents panel: priority -> grouped -> snoozed"
 description = "Step the Agents panel through priority order, grouped order and the list of only what is snoozed, round again. The label shows where you are."
 contexts = ["global"]
-command = ["/bin/sh", "run.sh", "toggle"]
+command = ["./bin/herdr-snooze", "toggle"]
 
 # herdr won't let its own "priority"/"grouped" label be clicked while snooze
 # holds the panel, so this switches the order in its place, without the stop at
@@ -52,53 +54,68 @@ id = "order"
 title = "Agents panel: priority <-> grouped"
 description = "Switch the Agents panel's order while anything is snoozed (herdr's own switch is locked then). Lasts until the last snooze ends."
 contexts = ["global"]
-command = ["/bin/sh", "run.sh", "order"]
+command = ["./bin/herdr-snooze", "order"]
+
+[[actions]]
+id = "manage"
+title = "Snooze: every agent"
+description = "What's snoozed and until when, and every agent that isn't: wake, change or snooze any of them from one list."
+contexts = ["global", "workspace", "pane"]
+command = ["./bin/herdr-snooze", "action", "manage"]
+
+[[actions]]
+id = "demo"
+title = "Snooze: demo (fictional agents)"
+description = "The list on made-up agents: try it, or take screenshots without showing real work."
+contexts = ["global"]
+command = ["./bin/herdr-snooze", "action", "demo"]
 
 [[actions]]
 id = "wake-all"
 title = "Wake all snoozed agents"
 contexts = ["global"]
-command = ["/bin/sh", "run.sh", "wake", "--all"]
+command = ["./bin/herdr-snooze", "wake", "--all"]
 
-# The duration picker. The action that opens it names the target through the
-# open request's env. Size is passed at open
-# time because it depends on how many rows there are.
+# The popup: the durations, or the list of every agent. The action that opens
+# it names the target through the open request's env, and passes the size,
+# which depends on which it is. Another plugin opens it on an agent with
+# HERDR_SNOOZE_PANE (see the README), in its own popup's place and size.
 [[panes]]
 id = "picker"
 title = "Snooze"
 placement = "popup"
-command = ["/bin/sh", "run.sh", "picker"]
+command = ["./bin/herdr-snooze", "picker"]
 
 # herdr expires the hiding token on its own (that is what makes wake-ups land
 # on time without a daemon), but three things still need a nudge: snoozes
 # longer than the 24h token TTL cap, tokens and the view dying with the server,
 # and another plugin replacing the single agent view. `tick` reconciles all of
-# it. run.sh exits before starting Python when nothing is snoozed (no state
-# file), so the idle cost of a hook is one sh spawn.
+# it. With nothing snoozed (no state file) a tick returns before doing
+# anything else, so the idle cost of a hook is one short process.
 [[startup]]
-command = ["/bin/sh", "run.sh", "tick", "--force"]
+command = ["./bin/herdr-snooze", "tick", "--force"]
 
 [[events]]
 on = "pane.agent_status_changed"
-command = ["/bin/sh", "run.sh", "tick"]
+command = ["./bin/herdr-snooze", "tick"]
 
 # A pane's agent came, went or changed kind, or its process exited (a release):
 # how a new agent of the same kind is told from the old one, which pane.list
 # alone can't do.
 [[events]]
 on = "pane.agent_detected"
-command = ["/bin/sh", "run.sh", "tick", "--detected"]
+command = ["./bin/herdr-snooze", "tick", "--detected"]
 
 # Also fires on every space switch, so workspace.focused would only double up.
 [[events]]
 on = "pane.focused"
-command = ["/bin/sh", "run.sh", "tick"]
+command = ["./bin/herdr-snooze", "tick"]
 
 [[events]]
 on = "pane.closed"
-command = ["/bin/sh", "run.sh", "tick"]
+command = ["./bin/herdr-snooze", "tick"]
 
 # A pane moved to another space gets a new ID: its snooze follows it.
 [[events]]
 on = "pane.moved"
-command = ["/bin/sh", "run.sh", "tick"]
+command = ["./bin/herdr-snooze", "tick"]

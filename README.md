@@ -9,7 +9,7 @@ and the agents that need you now. herdr-snooze is a
 the Agents panel until a time you pick, and brings it back by itself when the
 time is up.
 
-![The list on the demo's agents: a snoozed space with its two agents under it, two agents snoozed on their own with when each wakes, then the four that are awake](docs/images/list.png)
+<img src="docs/images/picker.png" alt="The snooze popup on an agent: 15 minutes to a week, each with the time it would wake, and Custom for your own" width="440">
 
 - **One key, both ways.** On an agent that's in the way, it asks how long
   and hides it; on a snoozed one, it wakes it.
@@ -172,11 +172,10 @@ herdr plugin action invoke herdr-snooze.agent
 
 ### Choosing how long
 
-<img src="docs/images/picker.png" alt="The durations for an agent, each with the time it would wake" width="440">
-
-Press a number, or move with `↑` `↓` and press `enter`; a click picks one
-too. Each row says when the agent would wake. `esc` cancels; `tab` goes to
-the list instead.
+Your snooze key on an agent opens the popup at the top: how long, each with
+the time the agent would wake. Press a number, or move with `↑` `↓` and press
+`enter`; a click picks one too. `esc` cancels; `tab` goes to the list
+instead.
 
 `c` takes anything, and says when that is as you type:
 
@@ -194,8 +193,12 @@ A preset counts from the moment you pick it, not from when the popup opened.
 
 ### The list
 
-`herdr-snooze.manage` opens every agent in one list (the picture at the
-top). **Snoozed** comes first: each snoozed space with the agents it hides
+`herdr-snooze.manage` (*Snooze: every agent* in the command palette) opens
+every agent in one list.
+
+![The list on the demo's agents: a snoozed space with its two agents under it, two agents snoozed on their own with when each wakes, then the four that are awake](docs/images/list.png)
+
+**Snoozed** comes first: each snoozed space with the agents it hides
 under it, then the agents snoozed on their own, the soonest to wake first,
 each with how long it has left and when it wakes. **Awake** is every other
 agent, in herdr's order, with its state.

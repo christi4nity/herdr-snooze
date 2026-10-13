@@ -35,6 +35,7 @@ time is up.
 This is one of four plugins that are useful alone and better together.
 Install [herdr-recap](https://github.com/mrolafsson/herdr-recap), [herdr-github](https://github.com/mrolafsson/herdr-github) or [herdr-linear](https://github.com/mrolafsson/herdr-linear) alongside it and they find each other:
 there is nothing to configure.
+[herdr-overwatch](https://github.com/mrolafsson/herdr-overwatch) installs all four at once, with a key bound to each.
 
 | Plugin | What it adds to the others |
 | --- | --- |

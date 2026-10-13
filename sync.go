@@ -20,6 +20,20 @@ func sendTokenOps(ops []tokenOp) []tokenOp {
 		case opReport, opWsReport:
 			params["tokens"] = map[string]any{token: op.Value, mark: "1"}
 			params["ttl_ms"] = op.TTL
+		case opWokeReport:
+			tokens := map[string]any{wokeToken: op.Value}
+			if op.Badge != "" {
+				tokens[wokeBadge] = op.Badge
+				tokens[token] = op.Badge
+			}
+			params["tokens"] = tokens
+			params["ttl_ms"] = op.TTL
+		case opWokeClear:
+			tokens := map[string]any{wokeToken: nil, wokeBadge: nil}
+			if op.Badge != "keep" {
+				tokens[token] = nil
+			}
+			params["tokens"] = tokens
 		default:
 			params["tokens"] = map[string]any{token: nil, mark: nil}
 		}
@@ -59,6 +73,7 @@ func syncState(st *state, cfg config, opts syncOpts) ([]pane, error) {
 	now := nowMS()
 	wakeOnChange(st, panes, cfg.WakeBlocked)
 	ops := reconcile(st, panes, now, opts.force, cfg.Badge)
+	ops = append(ops, trackWoke(st, panes, now, opts.force, cfg.WokeBadge)...)
 	failed := sendTokenOps(ops)
 	clearsFailed := 0
 	for _, op := range failed {
@@ -75,6 +90,8 @@ func syncState(st *state, cfg config, opts syncOpts) ([]pane, error) {
 			if e := st.Workspaces[op.Target]; e != nil {
 				e.Dirty = true
 			}
+		case opWokeReport, opWokeClear:
+			// Absent from the next pane.list or still there: resent then.
 		default:
 			clearsFailed++
 		}

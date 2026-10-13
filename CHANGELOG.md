@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0 - 2026-10-13
+
+- **A toast when an agent wakes by itself**: *fix flaky tests is awake*,
+  and why (*It's done*, *It needs you*, *Its pull request is merged*). A
+  space, or several agents at once, is one toast. Wakes you ask for aren't
+  announced. `"notify_wake": false` turns it off.
+- **Just woke.** An agent that woke by itself is at the top of the list,
+  with when and why (`woke 16:32 · it's done`), until you go to it, snooze
+  it again, or 4 hours have passed. Meanwhile it wears a ⏰ in the Agents
+  panel, where `"$snoozed"` shows a 💤 (or put `"$woke"` anywhere in a
+  row; `"woke_badge"` changes it). Recap 0.8 gives it a tab, *⏰ Just woke*.
+
 ## 0.4.0 - 2026-10-13
 
 - **Snooze until something happens.** Below Custom, the popup offers

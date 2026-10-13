@@ -1,8 +1,10 @@
 {
   "durations": ["15m", "1h", "3h", "6h", "tomorrow 9am", "1d", "3d", "1w"],
   "badge": "💤",
+  "woke_badge": "⏰",
   "notify": false,
   "wake_when_blocked": true,
+  "notify_wake": true,
   "views": {
     "plugin:some.other-plugin": {
       "its view label": [{ "field": { "token": "its_sort_token" }, "order": "desc" }]

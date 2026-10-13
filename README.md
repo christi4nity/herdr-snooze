@@ -27,6 +27,10 @@ time is up.
   snoozed, and back.
 - **Nothing stuck stays hidden.** A snoozed agent that comes to need you
   wakes by itself.
+- **It tells you.** When an agent wakes by itself, a toast says which one,
+  and why: *fix flaky tests is awake: It's done*. It's then at the top of
+  the list, under *Just woke*, and wears a ⏰ in the Agents panel, until you
+  go to it.
 - **Works with Recap.** Snoozed agents have a tab of their own there;
   `ctrl+s` snoozes the agent you're on, and `ctrl+w` wakes it.
 - **It fits in.** Follows herdr's theme, works with the mouse, and gets
@@ -43,7 +47,7 @@ there is nothing to configure.
 | [herdr-recap](https://github.com/mrolafsson/herdr-recap) | Every agent in one list. An agent's pull request and its Linear issue are links there: a click, or `ctrl+g` / `ctrl+l`, opens it in the plugin it belongs to. Snoozed agents have a tab of their own: `ctrl+s` snoozes an agent, in Snooze's popup, and `ctrl+w` wakes one. |
 | [herdr-github](https://github.com/mrolafsson/herdr-github) | Tags every space and agent with its branch's pull request (`#482 ✓ approved`), which Recap shows and groups its agents by. Opens straight on an agent's PR when Recap asks. |
 | [herdr-linear](https://github.com/mrolafsson/herdr-linear) | Tags every space and agent with the Linear issue its branch is named for (`ENG-142 In Progress`), which Recap shows. Opens straight on that issue when Recap asks. |
-| **[herdr-snooze](https://github.com/mrolafsson/herdr-snooze)** (this one) | Hides an agent, or a whole space, from herdr's Agents panel until a time you pick, or until the agent's done or its pull request is merged (from herdr-github's labels). Tags each snoozed agent with when it wakes (`💤 17:30`, `💤 till done`), which Recap shows. Opens straight on an agent when Recap asks, and opens Recap on one with `r`. |
+| **[herdr-snooze](https://github.com/mrolafsson/herdr-snooze)** (this one) | Hides an agent, or a whole space, from herdr's Agents panel until a time you pick, or until the agent's done or its pull request is merged (from herdr-github's labels). Tags each snoozed agent with when it wakes (`💤 17:30`, `💤 till done`), and one that just woke by itself with when and why, which Recap shows. Opens straight on an agent when Recap asks, and opens Recap on one with `r`. |
 
 - **Auto-discovery.** Each plugin asks herdr which others are installed and
   enabled. A link only appears when the plugin behind it is there; without
@@ -218,7 +222,7 @@ From the command line: `herdr-snooze snooze <pane> done` (or `merged`).
 `herdr-snooze.manage` (*Snooze: every agent* in the command palette) opens
 every agent in one list.
 
-![The list on the demo's agents: a snoozed space with its two agents under it, two agents snoozed on their own with when each wakes, then the four that are awake](docs/images/list.png)
+![The list on the demo's agents: one that just woke, with when and why; a snoozed space with its two agents under it; three agents snoozed on their own, with when each wakes; then the three that are awake](docs/images/list.png)
 
 **Snoozed** comes first: each snoozed space with the agents it hides
 under it, then the agents snoozed on their own, the soonest to wake first,
@@ -280,6 +284,20 @@ rows = [["state_icon", "workspace", "$snoozed"], ["terminal_title_stripped"]]
     Fix the login bug
 ```
 
+**Just woke.** An agent that wakes by itself (its time is up, or what it
+was snoozed until happened) goes at the top of the list, under *Just woke*,
+with when and why: `woke 16:32 · it's done`. `enter` goes to it and `s`
+snoozes it again. It leaves that list once you go to it, snooze it again, or
+after 4 hours. Meanwhile it wears a ⏰ where `"$snoozed"` shows its 💤,
+so a row that shows one shows the other, with nothing to change:
+
+```
+  ● web-app  ⏰
+    Fix the login bug
+```
+
+The ⏰ is also on its own in a `woke` token, for `"$woke"` somewhere else in
+a row (next to `state_icon`, it reads as the agent's icon).
 ## With Recap
 
 Snooze finds [herdr-recap](https://github.com/mrolafsson/herdr-recap) by
@@ -427,9 +445,11 @@ herdr plugin config-dir herdr-snooze
 | --- | --- | --- |
 | `durations` | `["15m","1h","3h","6h","1d","3d","1w"]` | Rows in the picker, 9 at most. Anything the Custom field accepts. Entries that don't parse are skipped. |
 | `badge` | `"💤"` | Shown in the panel label and in the `$snoozed` token. Any text; `""` for none. |
+| `woke_badge` | `"⏰"` | Shown in `$snoozed` (and `$woke`) on an agent that just woke by itself. Any text; `""` for none. |
 | `notify` | `false` | Show a herdr notification when something is snoozed. |
 | `auto_return` | `true` | Leave the snoozed list automatically, as described above. |
 | `wake_when_blocked` | `true` | Wake a snoozed agent when it comes to need you. |
+| `notify_wake` | `true` | Show a herdr notification when an agent wakes by itself (not when you wake it). |
 | `theme` | `""` | `"dark"` or `"light"` to say what your terminal is, instead of asking it. See [Colours](#colours). |
 | `views` | — | Teach snooze another plugin's panel order. See below. |
 | `sort` | — | Always use this `agent.view.set` sort while something is snoozed. |
@@ -552,6 +572,11 @@ writes. The Agents panel view is filtered to `not(exists herdr_snooze)`, so
 another plugin that happens to use a `snoozed` token can't hide or un-hide
 anything. The tokens are reported with a TTL, so herdr drops them at the
 deadline.
+
+An agent on the *Just woke* list carries the ⏰ in `snoozed` (without
+`herdr_snooze`: it's not hidden) and in `woke`, and `snooze_woke`, when and
+why (`16:32 · it's done`), which Recap reads. They too have a TTL, of
+what's left of the 4 hours.
 
 A small state file, `snoozed.json` in the plugin's state directory, holds the
 real deadlines, and which agent each one is for. `tick`, a startup hook plus

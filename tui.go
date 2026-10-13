@@ -39,7 +39,7 @@ type rowKind int
 const (
 	rowSpace  rowKind = iota // a snoozed space
 	rowPane                  // an agent, snoozed or not
-	rowHeader                // "Snoozed", "Awake": not selectable
+	rowHeader                // "Just woke", "Snoozed", "Awake": not selectable
 )
 
 type row struct {
@@ -49,10 +49,11 @@ type row struct {
 	where   string
 	status  string
 	snoozed bool
-	until   int64  // ms, while snoozed
-	via     string // a snoozed pane's: viaPane or viaWorkspace
-	when    string // a snoozed pane's condition (whenDone, whenMerged), if any
-	count   int    // a header's rows, a space's agents
+	until   int64      // ms, while snoozed
+	via     string     // a snoozed pane's: viaPane or viaWorkspace
+	when    string     // a snoozed pane's condition (whenDone, whenMerged), if any
+	woke    *wokeEntry // on the "Just woke" list
+	count   int        // a header's rows, a space's agents
 	p       pane
 	space   string // its workspace's ID
 }
@@ -152,8 +153,9 @@ func (m model) load() tea.Cmd {
 
 // ── rows ──────────────────────────────────────────────────────────────────────
 
-// buildRows is the list: what is snoozed (spaces, then agents, the soonest
-// to wake first), then every agent that isn't, in herdr's order.
+// buildRows is the list: what just woke by itself (the latest first), what
+// is snoozed (spaces, then agents, the soonest to wake first), then every
+// other agent, in herdr's order.
 func buildRows(st *state, panes []pane, labels map[string]string) []row {
 	live := map[string]pane{}
 	for _, p := range panes {
@@ -182,7 +184,7 @@ func buildRows(st *state, panes []pane, labels map[string]string) []row {
 	}
 	// A snoozed space, with the agents it hides under it; then the agents
 	// snoozed on their own, the soonest to wake first.
-	var snoozed, own, awake []row
+	var woke, snoozed, own, awake []row
 	agents := 0
 	for _, wid := range sortedKeys(st.Workspaces) {
 		var under []row
@@ -213,20 +215,28 @@ func buildRows(st *state, panes []pane, labels map[string]string) []row {
 		if p.Agent == "" || st.Panes[p.PaneID] != nil {
 			continue
 		}
+		if e := st.Woke[p.PaneID]; e != nil {
+			woke = append(woke, row{kind: rowPane, id: p.PaneID, title: paneLabel(p), where: where(p), status: p.AgentStatus,
+				woke: e, p: p, space: p.WorkspaceID})
+			continue
+		}
 		awake = append(awake, row{kind: rowPane, id: p.PaneID, title: paneLabel(p), where: where(p), status: p.AgentStatus, p: p, space: p.WorkspaceID})
 	}
+	sort.SliceStable(woke, func(i, j int) bool { return woke[i].woke.At > woke[j].woke.At })
 	var rows []row
-	if len(snoozed) > 0 {
-		rows = append(rows, row{kind: rowHeader, id: "Snoozed", count: agents})
-		rows = append(rows, snoozed...)
-	}
-	if len(awake) > 0 {
+	section := func(title string, count int, these []row) {
+		if len(these) == 0 {
+			return
+		}
 		if len(rows) > 0 {
 			rows = append(rows, row{kind: rowHeader}) // a blank line between
 		}
-		rows = append(rows, row{kind: rowHeader, id: "Awake", count: len(awake)})
-		rows = append(rows, awake...)
+		rows = append(rows, row{kind: rowHeader, id: title, count: count})
+		rows = append(rows, these...)
 	}
+	section("Just woke", len(woke), woke)
+	section("Snoozed", agents, snoozed)
+	section("Awake", len(awake), awake)
 	return rows
 }
 
@@ -881,8 +891,11 @@ func (m model) rowLine(r row, selected bool, now int64) string {
 	}
 	if r.kind == rowHeader {
 		style := styleTitle
-		if r.id == "Snoozed" {
+		switch r.id {
+		case "Snoozed":
 			style = snoozedStyle().Bold(true)
+		case "Just woke":
+			style = styleOK.Bold(true)
 		}
 		return " " + style.Render(r.id) + styleDim.Render(" "+strconv.Itoa(r.count))
 	}
@@ -915,6 +928,11 @@ func (m model) rowLine(r row, selected bool, now int64) string {
 		right = snoozedStyle().Render(conditionLabel(r.when)) + styleDim.Render(" · or "+formatUntil(fromMS(r.until), fromMS(now)))
 	case r.snoozed:
 		right = snoozedStyle().Render(formatLeft(r.until-now)) + styleDim.Render(" · "+formatUntil(fromMS(r.until), fromMS(now)))
+	case r.woke != nil:
+		right = styleOK.Render("woke " + formatUntil(fromMS(r.woke.At), fromMS(now)))
+		if r.woke.Reason != "" {
+			right += styleDim.Render(" · " + r.woke.Reason)
+		}
 	case r.status == "blocked":
 		right = styleBlocked.Render("needs you")
 	case r.status != "" && r.status != "unknown":

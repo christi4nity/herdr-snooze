@@ -30,6 +30,10 @@ type config struct {
 	Theme string
 	// WakeBlocked wakes a snoozed agent when it comes to need you.
 	WakeBlocked bool
+	// NotifyWake shows a toast when an agent wakes by itself.
+	NotifyWake bool
+	// WokeBadge is "$woke" on an agent that just woke; "" for none.
+	WokeBadge string
 }
 
 func defaultConfig() config {
@@ -38,6 +42,8 @@ func defaultConfig() config {
 		Badge:       defaultBadge,
 		AutoReturn:  true,
 		WakeBlocked: true,
+		NotifyWake:  true,
+		WokeBadge:   defaultWokeBadge,
 	}
 }
 
@@ -177,7 +183,13 @@ func loadConfig() config {
 			} else {
 				invalid(key)
 			}
-		case "notify", "auto_return", "wake_when_blocked":
+		case "woke_badge":
+			if s, ok := value.(string); ok {
+				cfg.WokeBadge = s
+			} else {
+				invalid(key)
+			}
+		case "notify", "auto_return", "wake_when_blocked", "notify_wake":
 			b, ok := value.(bool)
 			switch {
 			case !ok:
@@ -186,6 +198,8 @@ func loadConfig() config {
 				cfg.Notify = b
 			case key == "auto_return":
 				cfg.AutoReturn = b
+			case key == "notify_wake":
+				cfg.NotifyWake = b
 			default:
 				cfg.WakeBlocked = b
 			}

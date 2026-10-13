@@ -92,6 +92,9 @@ func armTimer(st *state, now int64, spawn func(int64) (int, error)) {
 	for _, e := range st.Workspaces {
 		entries = append(entries, due{e.Until, e.TokenUntil})
 	}
+	for _, e := range st.Woke {
+		entries = append(entries, due{e.At + justWokeMS, 0})
+	}
 	if len(entries) == 0 {
 		stopTimer(st.TimerPID)
 		st.Timer, st.TimerPID = nil, nil

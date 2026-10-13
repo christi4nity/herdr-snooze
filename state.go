@@ -106,14 +106,38 @@ type state struct {
 	// Timer is when the sleeper will tick, ms; TimerPID is its process.
 	Timer    *int64 `json:"timer"`
 	TimerPID *int   `json:"timer_pid"`
+
+	// Woke is the agents that woke by itself lately, by pane: the "Just
+	// woke" list, until you go to one, snooze it again, or justWokeMS.
+	Woke map[string]*wokeEntry `json:"woke"`
+
+	// Woken and SpacesWoke are what woke by itself in this run, announced
+	// once the state is saved. Never written: a run that saves nothing
+	// announces nothing, and the next one finds the same wakes again.
+	Woken      []woken  `json:"-"`
+	SpacesWoke []string `json:"-"`
+}
+
+// wokeEntry is an agent on the "Just woke" list.
+type wokeEntry struct {
+	// At is when it woke, ms.
+	At int64 `json:"at"`
+	// Reason is what woke it ("it's done"); "" for time up.
+	Reason  string   `json:"reason,omitempty"`
+	AgentID *agentID `json:"agent_id,omitempty"`
+	// Away: it has been seen not focused since it woke. Only then does
+	// focus on it mean you went to it: the pane you snoozed is often the
+	// one you stay on, and it would leave the list the moment it woke.
+	Away bool `json:"away,omitempty"`
 }
 
 func emptyState() *state {
-	return &state{V: 1, Panes: map[string]*paneEntry{}, Workspaces: map[string]*spaceEntry{}}
+	return &state{V: 1, Panes: map[string]*paneEntry{}, Workspaces: map[string]*spaceEntry{},
+		Woke: map[string]*wokeEntry{}}
 }
 
 func (s *state) idle() bool {
-	return len(s.Panes) == 0 && len(s.Workspaces) == 0 && s.View.empty()
+	return len(s.Panes) == 0 && len(s.Workspaces) == 0 && len(s.Woke) == 0 && s.View.empty()
 }
 
 func stateFile() string { return filepath.Join(stateDir(), "snoozed.json") }
@@ -183,6 +207,17 @@ func readState() *state {
 			continue
 		}
 		st.Workspaces[name] = &e
+	}
+	// Optional (0.4 had none), and only a list to show: an entry that
+	// can't be read is dropped, not taken for damage.
+	var woke map[string]json.RawMessage
+	if json.Unmarshal(top["woke"], &woke) == nil {
+		for name, raw := range woke {
+			var e wokeEntry
+			if strictDecode(raw, &e) && e.At > 0 {
+				st.Woke[name] = &e
+			}
+		}
 	}
 	if view := section("view"); view != nil {
 		if v, ok := decodeView(top["view"]); ok {
@@ -295,9 +330,13 @@ func withState(f func(*state) error) error {
 		}()
 		return f(st)
 	}()
-	if err := saveState(st, before); err != nil && ferr == nil {
-		return err
+	if err := saveState(st, before); err != nil {
+		if ferr == nil {
+			return err
+		}
+		return ferr
 	}
+	announceWakes(st.Woken, st.SpacesWoke)
 	return ferr
 }
 

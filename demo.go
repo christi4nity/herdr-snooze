@@ -43,6 +43,8 @@ func newDemoWorld() *demoWorld {
 	st.Panes["w3:p1"] = &paneEntry{Until: at(2*time.Hour + 14*time.Minute), Via: viaPane, WorkspaceID: "w3"}
 	st.Panes["w2:p2"] = &paneEntry{Until: tomorrow9, Via: viaPane, WorkspaceID: "w2"}
 	st.Panes["w3:p3"] = &paneEntry{Until: conditionCap(now).UnixMilli(), Via: viaPane, WorkspaceID: "w3", When: whenDone}
+	// One that was, until it finished.
+	st.Woke["w2:p1"] = &wokeEntry{At: at(-12 * time.Minute), Reason: "it's done"}
 	return &demoWorld{st: st, panes: panes, spaces: spaces}
 }
 
@@ -55,6 +57,10 @@ func (d *demoWorld) copyState() *state {
 	for k, v := range d.st.Workspaces {
 		e := *v
 		st.Workspaces[k] = &e
+	}
+	for k, v := range d.st.Woke {
+		e := *v
+		st.Woke[k] = &e
 	}
 	return st
 }
@@ -81,6 +87,7 @@ func (d *demoWorld) snooze(t target, until time.Time, when string, _ config) err
 		}
 	}
 	d.st.Panes[t.ID] = &paneEntry{Until: ms, Via: viaPane, WorkspaceID: ws, When: when}
+	delete(d.st.Woke, t.ID)
 	return nil
 }
 

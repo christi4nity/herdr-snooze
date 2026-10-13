@@ -425,12 +425,13 @@ func TestToggleOnAStaleFileExplainsItself(t *testing.T) {
 	e := cmdEnv(t)
 	e.snoozed(t, nowMS()-1000)
 	mustRun(t, "toggle")
-	if n := e.herdr.notifications(); !reflect.DeepEqual(n, []string{"Snooze: Nothing is snoozed."}) {
+	// what woke says why: herdr would drop a second toast this close
+	if n := e.herdr.notifications(); !reflect.DeepEqual(n, []string{"claude is awake: claude · One"}) {
 		t.Fatal(n)
 	}
 	sameJSON(t, e.herdr.currentView(), map[string]any{"active": true, "source": radar, "label": "active"}, "view")
-	if exists(e.file()) {
-		t.Fatal("file left")
+	if !onlyJustWoke(readState()) {
+		t.Fatal("more than the just-woke list left")
 	}
 }
 
@@ -504,8 +505,8 @@ func TestFailedLastClearKeepsTheFileSoTheNextTickRetries(t *testing.T) {
 	e.herdr.edit(func() { e.herdr.fail = nil }) // herdr is back
 	mustRun(t, "tick")
 	sameJSON(t, e.herdr.currentView(), map[string]any{"active": false}, "view")
-	if exists(e.file()) {
-		t.Fatal("file left")
+	if !onlyJustWoke(readState()) {
+		t.Fatal("more than the just-woke list left")
 	}
 }
 

@@ -44,7 +44,7 @@ func rec(st *state, panes []pane, now int64) []tokenOp {
 
 func TestNewSnoozeReportsTokenWithTTL(t *testing.T) {
 	st := stateOf(map[string]*paneEntry{"p1": {Until: now0 + hourMS, Dirty: true}}, nil)
-	expectOps(t, reconcile(st, []pane{mkPane("p1", nil)}, now0, false, "z"), tokenOp{opReport, "p1", "z 13:00", hourMS})
+	expectOps(t, reconcile(st, []pane{mkPane("p1", nil)}, now0, false, "z"), tokenOp{Kind: opReport, Target: "p1", Value: "z 13:00", TTL: hourMS})
 	if e := st.Panes["p1"]; e.TokenUntil != now0+hourMS || e.Dirty {
 		t.Fatalf("%+v", e)
 	}

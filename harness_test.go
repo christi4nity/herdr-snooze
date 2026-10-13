@@ -473,3 +473,9 @@ func stubSpawn(t *testing.T, f func(int64) (int, error)) {
 	spawnTimer = f
 	t.Cleanup(func() { spawnTimer = old })
 }
+
+// onlyJustWoke: every snooze is over, and what's left is the "Just woke"
+// list, which keeps the file until it's gone too.
+func onlyJustWoke(st *state) bool {
+	return len(st.Woke) > 0 && len(st.Panes) == 0 && len(st.Workspaces) == 0 && st.View.empty()
+}

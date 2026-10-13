@@ -384,9 +384,10 @@ func toggle() error {
 		if _, err := syncState(st, cfg, syncOpts{}); err != nil {
 			return err
 		}
-		if st.View.Applied == "" {
+		if st.View.Applied == "" && len(st.Woken) == 0 {
 			// The last deadline had passed and this very sync cleared it. A
-			// key press that does nothing needs a reason.
+			// key press that does nothing needs a reason; the wake's own
+			// toast is one, and herdr shows only one a second.
 			notify("Snooze", "Nothing is snoozed.")
 		}
 		shown := there
@@ -432,7 +433,7 @@ func flipOrder() error {
 		if _, err := syncState(st, cfg, syncOpts{}); err != nil {
 			return err
 		}
-		if st.View.Applied == "" {
+		if st.View.Applied == "" && len(st.Woken) == 0 {
 			notify("Snooze", "Nothing is snoozed: click the panel's label to switch its order.")
 		}
 		flipped := st.View.Order

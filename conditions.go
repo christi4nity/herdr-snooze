@@ -83,6 +83,7 @@ func wakeOnChange(st *state, panes []pane, wakeBlocked bool) {
 		if space := st.Workspaces[e.WorkspaceID]; space != nil {
 			space.addExcept(pid) // out of a still-snoozed space: don't re-adopt it
 		}
+		st.Woken = append(st.Woken, wokenFrom(p, e, reason))
 		logf("woke %s: %s", pid, reason)
 	}
 }

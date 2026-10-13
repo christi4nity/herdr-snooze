@@ -78,12 +78,13 @@ func TestLastSnoozeEndingInTheSnoozedListGivesRadarItsViewBack(t *testing.T) {
 	}
 	params := r.sync()
 	sameJSON(t, r.e.herdr.currentView(), map[string]any{"active": true, "source": radar, "label": "active"}, "view")
-	if params["filter"] != nil || !r.state.idle() {
+	if params["filter"] != nil || !onlyJustWoke(r.state) {
 		t.Fatal(params, r.state)
 	}
 	for _, pid := range []string{"work", "zz", "zz2"} {
-		if _, ok := r.e.herdr.tokens(pid)[token]; ok {
-			t.Fatal(pid, "still badged")
+		// what just woke wears the clock there now, and nothing else may
+		if v, ok := r.e.herdr.tokens(pid)[token]; ok && v != defaultWokeBadge {
+			t.Fatal(pid, "still badged:", v)
 		}
 	}
 }

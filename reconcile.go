@@ -33,6 +33,9 @@ const (
 	opClear    = "clear"
 	opWsReport = "ws_report"
 	opWsClear  = "ws_clear"
+	// The "Just woke" token, alone: wokeToken.
+	opWokeReport = "woke_report"
+	opWokeClear  = "woke_clear"
 )
 
 // tokenOp is a token change for herdr: report (with a value and a TTL) or
@@ -42,6 +45,10 @@ type tokenOp struct {
 	Target string
 	Value  string
 	TTL    int64
+	// Badge is wokeBadge's value, on an opWokeReport: also put in the
+	// `snoozed` slot. On an opWokeClear, "keep" leaves that slot alone (the
+	// agent is snoozed again, and the slot is its 💤 now).
+	Badge string
 }
 
 func tokenDue(dirty *bool, tokenUntil, until, now int64, present bool) bool {
@@ -60,7 +67,7 @@ func tokenOpFor(kind, target string, until int64, tokenUntil *int64, now int64, 
 	if when != "" {
 		text = conditionLabel(when)
 	}
-	return tokenOp{kind, target, badged(badge, text), ttl}
+	return tokenOp{Kind: kind, Target: target, Value: badged(badge, text), TTL: ttl}
 }
 
 func sortedKeys[V any](m map[string]V) []string {
@@ -92,6 +99,9 @@ func reconcile(st *state, panes []pane, now int64, force bool, badge string) []t
 			// off), or its time is up.
 			ops = append(ops, tokenOp{Kind: opWsClear, Target: wid})
 			delete(st.Workspaces, wid)
+			if liveSpaces[wid] {
+				st.SpacesWoke = append(st.SpacesWoke, wid)
+			}
 			continue
 		}
 		// Agents in the space join it — including ones that start later (the
@@ -130,6 +140,9 @@ func reconcile(st *state, panes []pane, now int64, force bool, badge string) []t
 			// wake-ups explicit.
 			ops = append(ops, tokenOp{Kind: opClear, Target: pid})
 			delete(st.Panes, pid)
+			if p.Agent != "" {
+				st.Woken = append(st.Woken, wokenFrom(p, entry, ""))
+			}
 			continue
 		}
 		if replaced(entry, p) {
@@ -167,6 +180,9 @@ func reconcile(st *state, panes []pane, now int64, force bool, badge string) []t
 		_, marked := p.Tokens[mark]
 		value, named := p.Tokens[token]
 		ours := marked || (named && looksOurs(value, badge))
+		if _, woke := st.Woke[p.PaneID]; woke && !marked {
+			continue // its `snoozed` is the just-woke badge (trackWoke's)
+		}
 		if _, held := st.Panes[p.PaneID]; !held && !cleared[p.PaneID] && ours {
 			ops = append(ops, tokenOp{Kind: opClear, Target: p.PaneID})
 		}

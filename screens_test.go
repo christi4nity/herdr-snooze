@@ -46,8 +46,10 @@ func TestWriteDemoScreens(t *testing.T) {
 	save("list", press(list, "down"))
 
 	// The durations, on an agent that's in the way.
-	pick := demoScreen(newModel(defaultConfig(), newDemoWorld(), target{}, false, "w2:p1", nil), pickerWidth, pickerHeight(defaultConfig()))
-	save("picker", press(press(pick, "down"), "down"))
+	// Working, with a pull request open: it can also wait till it's done, or
+	// till that's merged.
+	pick := demoScreen(newModel(defaultConfig(), newDemoWorld(), target{}, false, "w1:p2", nil), pickerWidth, pickerHeight(defaultConfig()))
+	save("picker", press(press(pick, "up"), "up"))
 
 	// Your own: a time or a duration, read as you type.
 	custom := press(pick, "c")

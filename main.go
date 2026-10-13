@@ -18,6 +18,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 )
 
 const usage = `herdr-snooze — hide agents from herdr's Agents panel until a deadline
@@ -33,7 +34,7 @@ const usage = `herdr-snooze — hide agents from herdr's Agents panel until a de
                              reconcile tokens and the agent view (the hooks)
   toggle                     Agents panel: priority -> grouped -> only snoozed
   order                      Agents panel: priority <-> grouped, while snoozed
-  snooze <pane_id|workspace:ID> <duration>
+  snooze <pane_id|workspace:ID> <duration|done|merged>
   wake --all | <pane_id|workspace:ID>...
   list                       what's snoozed, as text
   handoff JSON               (internal) open another plugin's popup once this
@@ -81,11 +82,14 @@ func run(args []string) (int, error) {
 		if id, ok := strings.CutPrefix(args[0], "workspace:"); ok {
 			kind, target = "workspace", id
 		}
-		until, err := parseUntil(args[1], timeNow())
-		if err != nil {
+		// "done" or "merged": until that happens, at the latest tomorrow.
+		when, until, err := "", time.Time{}, error(nil)
+		if args[1] == whenDone || args[1] == whenMerged {
+			when, until = args[1], conditionCap(timeNow())
+		} else if until, err = parseUntil(args[1], timeNow()); err != nil {
 			return 2, err
 		}
-		covered, err := snooze(kind, target, until, loadConfig(), nil)
+		covered, err := snooze(kind, target, until, loadConfig(), nil, when)
 		if err != nil {
 			return 1, err
 		}

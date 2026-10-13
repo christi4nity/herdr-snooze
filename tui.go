@@ -51,6 +51,7 @@ type row struct {
 	snoozed bool
 	until   int64  // ms, while snoozed
 	via     string // a snoozed pane's: viaPane or viaWorkspace
+	when    string // a snoozed pane's condition (whenDone, whenMerged), if any
 	count   int    // a header's rows, a space's agents
 	p       pane
 	space   string // its workspace's ID
@@ -169,7 +170,7 @@ func buildRows(st *state, panes []pane, labels map[string]string) []row {
 	}
 	snoozedAgent := func(pid string, e *paneEntry, p pane) row {
 		return row{kind: rowPane, id: pid, title: paneLabel(p), where: where(p), status: p.AgentStatus,
-			snoozed: true, until: e.Until, via: e.Via, p: p, space: p.WorkspaceID}
+			snoozed: true, until: e.Until, via: e.Via, when: e.When, p: p, space: p.WorkspaceID}
 	}
 	byUntil := func(rows []row) {
 		sort.SliceStable(rows, func(i, j int) bool {
@@ -545,9 +546,33 @@ func (m model) wakeCmd(panes, spaces []string, all bool, note string) (tea.Model
 	return m, func() tea.Msg { return doneMsg{note: note, err: w.wake(cfg, panes, spaces, all)} }
 }
 
+// condRow is a row after Custom…: a condition this agent can be snoozed
+// until.
+type condRow struct{ when, key, label string }
+
+// conditions are the rows after Custom…: until done for an agent that's
+// working, until merged for one with a pull request open. Not for a space.
+func (m model) conditions() []condRow {
+	if m.target.Kind != "pane" {
+		return nil
+	}
+	var rows []condRow
+	if m.target.Status == "working" {
+		rows = append(rows, condRow{whenDone, "d", "until done"})
+	}
+	if m.target.PR != "" {
+		rows = append(rows, condRow{whenMerged, "m", "until " + m.target.PR + " is merged"})
+	}
+	return rows
+}
+
+// pickRows is how many rows the durations take: the presets, Custom…, and
+// the conditions.
+func (m model) pickRows() int { return len(m.choices) + 1 + len(m.conditions()) }
+
 func (m model) pickKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 	m.err = ""
-	n := len(m.choices) + 1 // and Custom…
+	n := m.pickRows()
 	switch s := k.String(); s {
 	case "esc", "q":
 		if m.fromList {
@@ -574,6 +599,12 @@ func (m model) pickKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.choosePick(m.pick)
 	case "c":
 		return m.choosePick(len(m.choices))
+	case "d", "m":
+		for j, c := range m.conditions() {
+			if c.key == k.String() {
+				return m.choosePick(len(m.choices) + 1 + j)
+			}
+		}
 	default:
 		if d, err := strconv.Atoi(s); err == nil && d >= 1 && d <= len(m.choices) {
 			return m.choosePick(d - 1)
@@ -584,6 +615,9 @@ func (m model) pickKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) choosePick(i int) (tea.Model, tea.Cmd) {
 	m.pick = i
+	if c := i - len(m.choices) - 1; c >= 0 && c < len(m.conditions()) {
+		return m.snoozeCmd(conditionCap(timeNow()), m.conditions()[c].when)
+	}
 	if i >= len(m.choices) {
 		m.screen, m.tried = screenCustom, false
 		m.input.SetValue("")
@@ -596,7 +630,7 @@ func (m model) choosePick(i int) (tea.Model, tea.Cmd) {
 		m.err = err.Error()
 		return m, nil
 	}
-	return m.snoozeCmd(until)
+	return m.snoozeCmd(until, "")
 }
 
 func (m model) customKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -611,7 +645,7 @@ func (m model) customKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.tried = true
 			return m, nil
 		}
-		return m.snoozeCmd(until)
+		return m.snoozeCmd(until, "")
 	}
 	var cmd tea.Cmd
 	m.input, cmd = m.input.Update(k)
@@ -619,13 +653,18 @@ func (m model) customKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) snoozeCmd(until time.Time) (tea.Model, tea.Cmd) {
+// snoozeCmd snoozes the target until then, or (when) until that happens,
+// then at the latest.
+func (m model) snoozeCmd(until time.Time, when string) (tea.Model, tea.Cmd) {
 	m.busy = true
 	t, cfg, w := m.target, m.cfg, m.world
 	return m, func() tea.Msg {
-		if err := w.snooze(t, until, cfg); err != nil {
+		if err := w.snooze(t, until, when, cfg); err != nil {
 			// A stale target says why in its own words.
 			return doneMsg{err: errors.New(strings.TrimPrefix(err.Error(), errStale.Error()+": "))}
+		}
+		if when != "" {
+			return doneMsg{note: fmt.Sprintf("Snoozed %s %s", shorten(t.Label, 30), conditionLabel(when))}
 		}
 		return doneMsg{note: fmt.Sprintf("Snoozed %s until %s", shorten(t.Label, 30), formatUntil(until, timeNow()))}
 	}
@@ -736,7 +775,7 @@ func (m model) header() []string {
 // which is first, and how many fit.
 func (m model) pickWindow() (top, first, n int) {
 	top = len(m.header())
-	total := len(m.choices) + 1
+	total := m.pickRows()
 	room := max(1, m.height-top-3)
 	n = min(total, room)
 	first = 0
@@ -750,13 +789,18 @@ func (m model) viewPick() []string {
 	lines := m.header()
 	_, first, n := m.pickWindow()
 	now := timeNow()
+	conds := m.conditions()
 	for i := first; i < first+n; i++ {
 		key, label, right := "c", "Custom…", ""
-		if i < len(m.choices) {
+		switch c := i - len(m.choices) - 1; {
+		case i < len(m.choices):
 			key, label = strconv.Itoa(i+1), m.choices[i].label
 			if until, err := parseUntil(m.choices[i].spec, now); err == nil {
 				right = formatUntil(until, now)
 			}
+		case c >= 0:
+			// The cap, said as what happens if it doesn't.
+			key, label, right = conds[c].key, conds[c].label, "or "+formatUntil(conditionCap(now), now)
 		}
 		lines = append(lines, m.choiceLine(key, label, right, i == m.pick))
 	}
@@ -867,6 +911,8 @@ func (m model) rowLine(r row, selected bool, now int64) string {
 	switch {
 	case r.snoozed && r.via == viaWorkspace:
 		right = styleDim.Render("with the space")
+	case r.snoozed && r.when != "":
+		right = snoozedStyle().Render(conditionLabel(r.when)) + styleDim.Render(" · or "+formatUntil(fromMS(r.until), fromMS(now)))
 	case r.snoozed:
 		right = snoozedStyle().Render(formatLeft(r.until-now)) + styleDim.Render(" · "+formatUntil(fromMS(r.until), fromMS(now)))
 	case r.status == "blocked":

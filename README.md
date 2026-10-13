@@ -15,6 +15,8 @@ time is up.
   and hides it; on a snoozed one, it wakes it.
 - **For as long as you like.** 15 minutes, an hour, *tomorrow 9am*, a week,
   or anything you type, read as you type it.
+- **Or until something happens.** Until the agent's done working, or until
+  its pull request is merged; at the latest, the next morning.
 - **A whole space at once**, including agents that start there later.
 - **It comes back on time**, with nothing of the plugin running: herdr
   itself drops what hides it at the deadline.
@@ -23,8 +25,8 @@ time is up.
   same popup.
 - **Or look in the panel.** One key flips the Agents panel to only what's
   snoozed, and back.
-- **Nothing blocked stays hidden.** A snoozed agent that needs you still
-  shows in the snoozed list.
+- **Nothing stuck stays hidden.** A snoozed agent that comes to need you
+  wakes by itself.
 - **Works with Recap.** Snoozed agents have a tab of their own there;
   `ctrl+s` snoozes the agent you're on, and `ctrl+w` wakes it.
 - **It fits in.** Follows herdr's theme, works with the mouse, and gets
@@ -41,7 +43,7 @@ there is nothing to configure.
 | [herdr-recap](https://github.com/mrolafsson/herdr-recap) | Every agent in one list. An agent's pull request and its Linear issue are links there: a click, or `ctrl+g` / `ctrl+l`, opens it in the plugin it belongs to. Snoozed agents have a tab of their own: `ctrl+s` snoozes an agent, in Snooze's popup, and `ctrl+w` wakes one. |
 | [herdr-github](https://github.com/mrolafsson/herdr-github) | Tags every space and agent with its branch's pull request (`#482 ✓ approved`), which Recap shows and groups its agents by. Opens straight on an agent's PR when Recap asks. |
 | [herdr-linear](https://github.com/mrolafsson/herdr-linear) | Tags every space and agent with the Linear issue its branch is named for (`ENG-142 In Progress`), which Recap shows. Opens straight on that issue when Recap asks. |
-| **[herdr-snooze](https://github.com/mrolafsson/herdr-snooze)** (this one) | Hides an agent, or a whole space, from herdr's Agents panel until a time you pick. Tags each snoozed agent with when it wakes (`💤 17:30`), which Recap shows. Opens straight on an agent when Recap asks, and opens Recap on one with `r`. |
+| **[herdr-snooze](https://github.com/mrolafsson/herdr-snooze)** (this one) | Hides an agent, or a whole space, from herdr's Agents panel until a time you pick, or until the agent's done or its pull request is merged (from herdr-github's labels). Tags each snoozed agent with when it wakes (`💤 17:30`, `💤 till done`), which Recap shows. Opens straight on an agent when Recap asks, and opens Recap on one with `r`. |
 
 - **Auto-discovery.** Each plugin asks herdr which others are installed and
   enabled. A link only appears when the plugin behind it is there; without
@@ -75,6 +77,11 @@ This is how they stay out of the way:
   pull request: until the review's likely back, *3 hours*. The one waiting on
   the API team: *tomorrow 9am*. It's gone from the panel, and when the time is
   up it's back, without you having to remember it.
+- **Or until it's worth looking at.** The agent running a long refactor:
+  *until done*, and it's back, finished, at the top of the panel. The one
+  whose pull request is in review: *until merged*, and it's back once it is,
+  to clean up its worktree. These are short waits, so if it hasn't happened
+  by the next morning, it's back then anyway.
 - **Snooze a space you're not on today.** The docs space can sit for three
   days. Its agents go with it, and so does any agent started there meanwhile.
 - **Keep the panel for what needs you.** What's left is what you're working
@@ -82,9 +89,9 @@ This is how they stay out of the way:
 - **Look at what's snoozed when you choose to.** The list shows everything
   that's snoozed and when each wakes; a key in the panel flips it to only the
   snoozed ones. Waking one early, or giving it longer, is one key either way.
-- **Nothing that needs you stays hidden.** herdr still notifies you, and a
-  snoozed agent that's blocked shows in the snoozed list. Snoozing hides; it
-  doesn't pause or mute.
+- **Nothing that needs you stays hidden.** A snoozed agent that gets stuck
+  wakes there and then, and herdr notifies you as it always does. Snoozing
+  hides; it doesn't pause or mute.
 
 With [Recap](https://github.com/mrolafsson/herdr-recap) installed, snoozed
 agents have a tab of their own there, so coming back to the list starts with
@@ -190,6 +197,21 @@ instead.
 | `tomorrow`, `tomorrow 14:00` | tomorrow at 9:00, or at the time given |
 
 A preset counts from the moment you pick it, not from when the popup opened.
+
+Below Custom, the popup offers what this agent can be snoozed **until**:
+
+| Key | Until | Offered |
+| --- | --- | --- |
+| `d` | **done**: it stops working (it's done, idle, or stuck) | while it's working |
+| `m` | **merged**: its pull request is merged, or closed | while it has one open, from [herdr-github](https://github.com/mrolafsson/herdr-github)'s labels |
+
+These are short waits, so each has a cap: if it hasn't happened by 9:00 the
+next morning, the agent's back then anyway (the row says *or Wed 09:00*).
+The sidebar's `$snoozed` and the list say *till done* or *till merged*
+instead of a time. Done is seen the moment the agent's status changes. A
+merge is seen at the next tick: herdr has no event for another plugin's
+label changing, so that's your next focus change, or within five minutes.
+From the command line: `herdr-snooze snooze <pane> done` (or `merged`).
 
 ### The list
 
@@ -302,6 +324,13 @@ the Agents panel is the only thing that changes (sidebar rows, mouse targets,
 so the agent reappears at the deadline even if nothing of this plugin is
 running. The label and the panel catch up within about a second.
 
+**It comes back when it needs you.** A snoozed agent that gets stuck (waiting
+on a permission, a question, an answer) wakes as soon as herdr says so,
+whatever it was snoozed until. Only the change counts: an agent snoozed while
+it was already waiting on you was snoozed knowing that, and stays snoozed
+until it moves on and gets stuck again. Set `"wake_when_blocked": false` to
+leave it hidden.
+
 **The snoozed list is somewhere you visit, not a mode you get stuck in.** A
 panel that only lists snoozed agents would hide the one that just got blocked,
 so:
@@ -400,6 +429,7 @@ herdr plugin config-dir herdr-snooze
 | `badge` | `"💤"` | Shown in the panel label and in the `$snoozed` token. Any text; `""` for none. |
 | `notify` | `false` | Show a herdr notification when something is snoozed. |
 | `auto_return` | `true` | Leave the snoozed list automatically, as described above. |
+| `wake_when_blocked` | `true` | Wake a snoozed agent when it comes to need you. |
 | `theme` | `""` | `"dark"` or `"light"` to say what your terminal is, instead of asking it. See [Colours](#colours). |
 | `views` | — | Teach snooze another plugin's panel order. See below. |
 | `sort` | — | Always use this `agent.view.set` sort while something is snoozed. |

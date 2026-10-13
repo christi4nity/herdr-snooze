@@ -27,6 +27,7 @@ const (
 	envAgent  = "HERDR_SNOOZE_AGENT"  // the agent shown, as JSON
 	envStatus = "HERDR_SNOOZE_STATUS" // its status, for its mark
 	envDemo   = "HERDR_SNOOZE_DEMO"   // "1": fictional agents
+	envPR     = "HERDR_SNOOZE_PR"     // its open pull request
 )
 
 // The popups' sizes: the duration picker is just big enough for its rows;
@@ -37,8 +38,9 @@ const (
 )
 
 func pickerHeight(cfg config) int {
-	// durations + Custom + chrome, and never less than Custom needs
-	return max(min(len(cfg.Durations), 9)+10, 13)
+	// durations + Custom + until done and until merged + chrome, and never
+	// less than Custom needs
+	return max(min(len(cfg.Durations), 9)+12, 13)
 }
 
 type invocation struct {
@@ -161,6 +163,8 @@ type target struct {
 	// Snoozed: it is already, so the durations change when it wakes, and
 	// it can be woken now.
 	Snoozed bool
+	// PR is its open pull request ("#482"), to snooze until it's merged.
+	PR string
 }
 
 func paneTarget(p pane, workspace string) target {
@@ -170,8 +174,12 @@ func paneTarget(p pane, workspace string) target {
 			parts = append(parts, s)
 		}
 	}
-	return target{Kind: "pane", ID: p.PaneID, Label: paneLabel(p), Detail: strings.Join(parts, " · "),
+	t := target{Kind: "pane", ID: p.PaneID, Label: paneLabel(p), Detail: strings.Join(parts, " · "),
 		Agent: agentIdentity(p), Status: p.AgentStatus}
+	if canWaitFor(whenMerged, p) {
+		t.PR, _ = p.Tokens["pr"].(string)
+	}
+	return t
 }
 
 func spaceTarget(w workspaceInfo, panes []pane) target {
@@ -202,12 +210,15 @@ func (t target) env() map[string]string {
 	if t.Status != "" {
 		env[envStatus] = t.Status
 	}
+	if t.PR != "" {
+		env[envPR] = t.PR
+	}
 	return env
 }
 
 func targetFromEnv() target {
 	t := target{Kind: os.Getenv(envKind), ID: os.Getenv(envTarget), Label: os.Getenv(envLabel),
-		Detail: os.Getenv(envDetail), Status: os.Getenv(envStatus)}
+		Detail: os.Getenv(envDetail), Status: os.Getenv(envStatus), PR: os.Getenv(envPR)}
 	if t.Kind == "" {
 		t.Kind = "pane"
 	}

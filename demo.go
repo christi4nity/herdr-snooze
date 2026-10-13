@@ -23,7 +23,7 @@ func newDemoWorld() *demoWorld {
 	}
 	panes := []pane{
 		agent("w1:p1", "w1", "claude", "blocked", "ENG-142 Retry failed webhooks with backoff"),
-		agent("w1:p2", "w1", "codex", "working", "Idempotency keys on POST /charges"),
+		withPR(agent("w1:p2", "w1", "codex", "working", "Idempotency keys on POST /charges"), "#482"),
 		agent("w2:p1", "w2", "claude", "done", "ENG-156 Dark mode for the settings page"),
 		agent("w2:p2", "w2", "claude", "idle", "Flaky checkout e2e test"),
 		agent("w3:p1", "w3", "claude", "idle", "Terraform: move the queue to its own VPC"),
@@ -31,6 +31,8 @@ func newDemoWorld() *demoWorld {
 		agent("w4:p1", "w4", "claude", "idle", "Rewrite the onboarding guide"),
 		agent("w4:p2", "w4", "codex", "working", "API reference from the OpenAPI spec"),
 	}
+	// One more, snoozed till it's done.
+	panes = append(panes, agent("w3:p3", "w3", "claude", "working", "Load test the new queue"))
 	now := timeNow()
 	at := func(d time.Duration) int64 { return now.Add(d).UnixMilli() }
 	tomorrow9 := time.Date(now.Year(), now.Month(), now.Day()+1, 9, 0, 0, 0, now.Location()).UnixMilli()
@@ -40,6 +42,7 @@ func newDemoWorld() *demoWorld {
 	st.Panes["w4:p2"] = &paneEntry{Until: st.Workspaces["w4"].Until, Via: viaWorkspace, WorkspaceID: "w4"}
 	st.Panes["w3:p1"] = &paneEntry{Until: at(2*time.Hour + 14*time.Minute), Via: viaPane, WorkspaceID: "w3"}
 	st.Panes["w2:p2"] = &paneEntry{Until: tomorrow9, Via: viaPane, WorkspaceID: "w2"}
+	st.Panes["w3:p3"] = &paneEntry{Until: conditionCap(now).UnixMilli(), Via: viaPane, WorkspaceID: "w3", When: whenDone}
 	return &demoWorld{st: st, panes: panes, spaces: spaces}
 }
 
@@ -60,7 +63,7 @@ func (d *demoWorld) load() loadedMsg {
 	return loadedMsg{st: d.copyState(), panes: d.panes, spaces: d.spaces}
 }
 
-func (d *demoWorld) snooze(t target, until time.Time, _ config) error {
+func (d *demoWorld) snooze(t target, until time.Time, when string, _ config) error {
 	ms := until.UnixMilli()
 	if t.Kind == "workspace" {
 		d.st.Workspaces[t.ID] = &spaceEntry{Until: ms}
@@ -77,7 +80,7 @@ func (d *demoWorld) snooze(t target, until time.Time, _ config) error {
 			ws = p.WorkspaceID
 		}
 	}
-	d.st.Panes[t.ID] = &paneEntry{Until: ms, Via: viaPane, WorkspaceID: ws}
+	d.st.Panes[t.ID] = &paneEntry{Until: ms, Via: viaPane, WorkspaceID: ws, When: when}
 	return nil
 }
 
@@ -98,6 +101,12 @@ func (d *demoWorld) wake(_ config, panes, spaces []string, all bool) error {
 		}
 	}
 	return nil
+}
+
+// withPR gives a demo agent an open pull request, as herdr-github tags one.
+func withPR(p pane, pr string) pane {
+	p.Tokens = map[string]any{"pr": pr, "pr_state": "open"}
+	return p
 }
 
 var errDemo = errors.New("that's for real agents: this is the demo")

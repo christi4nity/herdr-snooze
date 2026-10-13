@@ -39,6 +39,11 @@ type paneEntry struct {
 	Dirty bool `json:"dirty,omitempty"`
 	// AgentGone: the agent it was for has left; another arriving isn't it.
 	AgentGone bool `json:"agent_gone,omitempty"`
+	// When is a condition it's snoozed until (whenDone, whenMerged); Until
+	// is then its cap.
+	When string `json:"when,omitempty"`
+	// Status is the agent's status when last seen, to tell a change by.
+	Status string `json:"status,omitempty"`
 }
 
 // spaceEntry is one snoozed workspace.

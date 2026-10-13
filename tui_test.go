@@ -144,7 +144,7 @@ func TestTheListKeepsASpacesAgentsUnderIt(t *testing.T) {
 		order = append(order, r.id)
 	}
 	got := strings.Join(order, " ")
-	if !strings.HasPrefix(got, "Snoozed w4 w4:p1 w4:p2 w3:p1 w2:p2  Awake") {
+	if !strings.HasPrefix(got, "Snoozed w4 w4:p1 w4:p2 w3:p1 w2:p2 w3:p3  Awake") {
 		t.Errorf("rows: %s", got)
 	}
 }

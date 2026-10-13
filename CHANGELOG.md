@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 - 2026-10-13
+
+- **Snooze until something happens.** Below Custom, the popup offers
+  *until done* (`d`) for an agent that's working, and *until #482 is merged*
+  (`m`) for one with a pull request open (from herdr-github's labels). Each
+  is capped at 9:00 the next morning: if it hasn't happened by then, the
+  agent's back anyway. The badge, the list and Recap say *till done* or
+  *till merged*. From the command line, `snooze <pane> done` or `merged`.
+- **A snoozed agent that comes to need you wakes by itself**, whatever it
+  was snoozed until. An agent snoozed while it was already waiting on you
+  stays snoozed until it moves on and gets stuck again.
+  `"wake_when_blocked": false` keeps it hidden.
+
 ## 0.3.0 - 2026-10-12
 
 Rewritten in Go, to look and work like the other herdr plugins, and to work

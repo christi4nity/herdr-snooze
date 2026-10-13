@@ -132,7 +132,7 @@ func TestAMovedPaneKeepsItsSnoozeEvenIfAPlainTickSeesItFirst(t *testing.T) {
 }
 
 func pick(target string, shown *agentID) error {
-	_, err := snooze("pane", target, time.Now().Add(time.Hour), loadConfig(), shown)
+	_, err := snooze("pane", target, time.Now().Add(time.Hour), loadConfig(), shown, "")
 	return err
 }
 

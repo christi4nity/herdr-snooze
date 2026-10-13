@@ -28,13 +28,16 @@ type config struct {
 	AutoReturn bool
 	// Theme: "dark", "light", or empty to ask the terminal.
 	Theme string
+	// WakeBlocked wakes a snoozed agent when it comes to need you.
+	WakeBlocked bool
 }
 
 func defaultConfig() config {
 	return config{
-		Durations:  append([]string(nil), defaultDurations...),
-		Badge:      defaultBadge,
-		AutoReturn: true,
+		Durations:   append([]string(nil), defaultDurations...),
+		Badge:       defaultBadge,
+		AutoReturn:  true,
+		WakeBlocked: true,
 	}
 }
 
@@ -174,14 +177,17 @@ func loadConfig() config {
 			} else {
 				invalid(key)
 			}
-		case "notify", "auto_return":
+		case "notify", "auto_return", "wake_when_blocked":
 			b, ok := value.(bool)
-			if !ok {
+			switch {
+			case !ok:
 				invalid(key)
-			} else if key == "notify" {
+			case key == "notify":
 				cfg.Notify = b
-			} else {
+			case key == "auto_return":
 				cfg.AutoReturn = b
+			default:
+				cfg.WakeBlocked = b
 			}
 		case "sort":
 			if value == nil {

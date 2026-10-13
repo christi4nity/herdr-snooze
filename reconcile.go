@@ -53,10 +53,14 @@ func tokenDue(dirty *bool, tokenUntil, until, now int64, present bool) bool {
 	return tokenUntil < until && tokenUntil-now < refreshMarginMS
 }
 
-func tokenOpFor(kind, target string, until int64, tokenUntil *int64, now int64, badge string) tokenOp {
+func tokenOpFor(kind, target string, until int64, tokenUntil *int64, now int64, badge, when string) tokenOp {
 	ttl := max(1, min(until-now, maxTTLMS))
 	*tokenUntil = now + ttl
-	return tokenOp{kind, target, badged(badge, formatUntil(fromMS(until), fromMS(now))), ttl}
+	text := formatUntil(fromMS(until), fromMS(now))
+	if when != "" {
+		text = conditionLabel(when)
+	}
+	return tokenOp{kind, target, badged(badge, text), ttl}
 }
 
 func sortedKeys[V any](m map[string]V) []string {
@@ -109,7 +113,7 @@ func reconcile(st *state, panes []pane, now int64, force bool, badge string) []t
 		// Workspace tokens are not visible from pane.list, so only the clock
 		// (or a forced pass after a server restart) can say one needs sending.
 		if tokenDue(&space.Dirty, space.TokenUntil, space.Until, now, !force) {
-			ops = append(ops, tokenOpFor(opWsReport, wid, space.Until, &space.TokenUntil, now, badge))
+			ops = append(ops, tokenOpFor(opWsReport, wid, space.Until, &space.TokenUntil, now, badge, ""))
 		}
 	}
 
@@ -144,7 +148,7 @@ func reconcile(st *state, panes []pane, now int64, force bool, badge string) []t
 		}
 		_, present := p.Tokens[mark]
 		if tokenDue(&entry.Dirty, entry.TokenUntil, entry.Until, now, present && !force) {
-			ops = append(ops, tokenOpFor(opReport, pid, entry.Until, &entry.TokenUntil, now, badge))
+			ops = append(ops, tokenOpFor(opReport, pid, entry.Until, &entry.TokenUntil, now, badge, entry.When))
 		}
 	}
 

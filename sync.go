@@ -57,6 +57,7 @@ func syncState(st *state, cfg config, opts syncOpts) ([]pane, error) {
 		return nil, err
 	}
 	now := nowMS()
+	wakeOnChange(st, panes, cfg.WakeBlocked)
 	ops := reconcile(st, panes, now, opts.force, cfg.Badge)
 	failed := sendTokenOps(ops)
 	clearsFailed := 0
@@ -161,7 +162,10 @@ var errStale = errors.New("stale target")
 // if that pane has since closed, moved (a new pane ID), or a different agent
 // started in it, snoozing now would hide something the person never chose —
 // so it's refused instead.
-func snooze(kind, target string, until time.Time, cfg config, expect *agentID) (int, error) {
+//
+// when is a condition to wake on as well (whenDone, whenMerged), with until
+// its cap; "" for a plain snooze.
+func snooze(kind, target string, until time.Time, cfg config, expect *agentID, when string) (int, error) {
 	untilMS := until.UnixMilli()
 	covered := 0
 	err := withState(func(st *state) error {
@@ -173,7 +177,7 @@ func snooze(kind, target string, until time.Time, cfg config, expect *agentID) (
 				}
 			}
 		} else {
-			record := &paneEntry{Until: untilMS, Via: viaPane, Dirty: true, Since: nowMS()}
+			record := &paneEntry{Until: untilMS, Via: viaPane, Dirty: true, Since: nowMS(), When: when}
 			if expect != nil {
 				panes, err := listPanes()
 				if err != nil {
@@ -196,6 +200,7 @@ func snooze(kind, target string, until time.Time, cfg config, expect *agentID) (
 				record.AgentID = agentIdentity(*found)
 				record.TerminalID = found.TerminalID
 				record.WorkspaceID = found.WorkspaceID
+				record.Status = found.AgentStatus
 			}
 			st.Panes[target] = record
 			// Its own deadline now outranks its space's: without this, a

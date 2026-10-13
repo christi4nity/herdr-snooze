@@ -552,6 +552,20 @@ everything that's snoozed; `herdr-snooze.wake-all` brings everything back.
 not restored: see *Alongside plugins that sort the Agents panel*. Waking
 everything hands the view back.
 
+**The 💤 or ⏰ shows as a box, or not at all.** They're emoji, and your
+terminal draws them from an emoji font: without one (common on a minimal
+server, or over a remote connection from a machine without one), you get
+a box (□) or a blank, and with some fonts the rest of the row shifts by a
+column. Install an emoji font (Noto Color Emoji, on Linux:
+`fonts-noto-color-emoji`), or use plain text instead in `config.json`:
+
+```json
+{ "badge": "(-_-)zz", "woke_badge": "(O_O)" }
+```
+
+The popup, the toasts and the list say it in words anyway. Recap's tab
+icons are its own, and fixed: see its README.
+
 **The install failed.** Without Go, the build step downloads the release for
 your platform from GitHub; with no network, or a platform other than Linux or
 macOS on arm64 or x86-64, install [Go](https://go.dev/dl) and install again.
